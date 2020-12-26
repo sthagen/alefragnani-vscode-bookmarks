@@ -1,3 +1,59 @@
+## [12.1.0] - 2020-12-23
+### Added
+- Support submenu for editor commands (issue [#351](https://github.com/alefragnani/vscode-bookmarks/issues/351))
+
+### Changed
+- Setting `bookmarks.navigateThroughAllFiles` is now `true` by default (issue [#102](https://github.com/alefragnani/vscode-bookmarks/issues/102))
+
+### Internal
+- Remove unnecessary files from extension package (issue [#355](https://github.com/alefragnani/vscode-bookmarks/issues/355))
+
+## [12.0.0] - 2020-11-24
+### Added
+- `Open Settings` command to the Side Bar (issue [#352](https://github.com/alefragnani/vscode-bookmarks/issues/352))
+- `Toggle Labeled` command to the Context Menu (Thanks to @fade2gray [PR #342](https://github.com/alefragnani/vscode-bookmarks/pull/342))
+
+### Changed
+- Switch initialization to `onStartupFinished` API (Thanks to @jasonwilliams [PR #343](https://github.com/alefragnani/vscode-bookmarks/pull/343))
+
+### Fixed
+- Clearing bookmark label through `Toggle Labeled` command leaving leading spaces (issue [#344](https://github.com/alefragnani/vscode-bookmarks/issues/344))
+- Leading spaces while using Move Line Up/Down (issue [#348](https://github.com/alefragnani/vscode-bookmarks/issues/348))
+- "Ghost" Bookmarks after renaming files (issue [#209](https://github.com/alefragnani/vscode-bookmarks/issues/209))
+
+### Internal
+- Use `vscode-ext-help-and-feedback` package (issue [#346](https://github.com/alefragnani/vscode-bookmarks/issues/346))
+
+## [11.4.0] - 2020-10-16
+### Added
+- Support clear the bookmark label in `Toggle Labeled` and `Edit Label` commands (issue [#320](https://github.com/alefragnani/vscode-bookmarks/issues/320))
+
+### Changed
+- Localization support - zh-cn (Thanks to @loniceras [PR #327](https://github.com/alefragnani/vscode-bookmarks/pull/327))
+
+### Fixed
+- Typo in Side Bar welcome page (Thanks to @osteele [PR #316](https://github.com/alefragnani/vscode-bookmarks/pull/316))
+
+### Internal
+- Update CodeStream sponsorship details
+
+## [11.3.1] - 2020-06-20
+### Fixed
+- `Open Folder` command in Welcome view not working on Windows (issue [#310](https://github.com/alefragnani/vscode-bookmarks/issues/310))
+- Stars visibility on Marketplace (issue [#314](https://github.com/alefragnani/vscode-bookmarks/issues/314))
+
+## [11.3.0] - 2020-06-15
+### Added
+- Auto-save bookmarks when changing `saveBookmarksInProject` setting (issue [#242](https://github.com/alefragnani/vscode-bookmarks/issues/242))
+
+### Changed
+- Internal commands can't be customisable (issue [#306](https://github.com/alefragnani/vscode-bookmarks/issues/306))
+
+### Internal
+- Migrate from TSLint to ESLint (issue [#290](https://github.com/alefragnani/vscode-bookmarks/issues/290))
+- Remove `vscode` dependency (issue [#296](https://github.com/alefragnani/vscode-bookmarks/issues/296))
+- Use `vscode-ext-codicons` package  (issue [#309](https://github.com/alefragnani/vscode-bookmarks/issues/309))
+
 ## [11.2.0] - 2020-05-09
 ### Added
 - Use selected text as Label (issue [#239](https://github.com/alefragnani/vscode-bookmarks/issues/239))

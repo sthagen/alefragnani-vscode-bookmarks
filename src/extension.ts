@@ -3,21 +3,23 @@
 *  Licensed under the MIT License. See License.md in the project root for license information.
 *--------------------------------------------------------------------------------------------*/
 
-import fs = require("fs");
 import path = require("path");
 import * as vscode from "vscode";
-
+import { codicons } from "vscode-ext-codicons";
 import { BookmarkedFile, NO_BOOKMARKS_AFTER, NO_BOOKMARKS_BEFORE, NO_MORE_BOOKMARKS } from "../vscode-bookmarks-core/src/api/bookmark";
-import { Directions, SEARCH_EDITOR_SCHEME } from "../vscode-bookmarks-core/src/api/constants";
+import { Directions, isWindows, SEARCH_EDITOR_SCHEME } from "../vscode-bookmarks-core/src/api/constants";
+import { Container } from "../vscode-bookmarks-core/src/container";
+import { createTextEditorDecoration, updateDecorationsInActiveEditor } from "../vscode-bookmarks-core/src/decoration";
 import { BookmarksController } from "../vscode-bookmarks-core/src/model/bookmarks";
-import { BookmarkProvider, BookmarksExplorer } from "../vscode-bookmarks-core/src/sidebar/bookmarkProvider";
-import { Parser, Point } from "../vscode-bookmarks-core/src/sidebar/parser";
+import { loadBookmarks, saveBookmarks } from "../vscode-bookmarks-core/src/model/workspaceState";
+import { expandSelectionToNextBookmark, selectBookmarkedLines, shrinkSelection } from "../vscode-bookmarks-core/src/selections";
+import { BookmarksExplorer } from "../vscode-bookmarks-core/src/sidebar/bookmarkProvider";
+import { parsePosition, Point } from "../vscode-bookmarks-core/src/sidebar/parser";
 import { Sticky } from "../vscode-bookmarks-core/src/sticky/sticky";
 import { suggestLabel, useSelectionWhenAvailable } from "../vscode-bookmarks-core/src/suggestion";
-import { createTextEditorDecoration, updateDecorationsInActiveEditor } from "../vscode-bookmarks-core/src/decoration";
-import { loadBookmarks, saveBookmarks } from "../vscode-bookmarks-core/src/model/workspaceState";
-import { expandSelectionToNextBookmark, shrinkSelection, selectBookmarkedLines } from "../vscode-bookmarks-core/src/selections";
-import { Container } from "../vscode-bookmarks-core/src/container";
+import { registerOpenSettings } from "./commands/openSettings";
+import { registerSupportBookmarks } from "./commands/supportBookmarks";
+import { registerHelpAndFeedbackView } from "./sidebar/helpAndFeedbackView";
 import { registerWhatsNew } from "./whats-new/commands";
 
 // this method is called when vs code is activated
@@ -30,10 +32,15 @@ export function activate(context: vscode.ExtensionContext) {
     let timeout: NodeJS.Timer;
 
     registerWhatsNew();
-
+    
+    context.subscriptions.push(vscode.commands.registerCommand("_bookmarks.openFolderWelcome", () => {
+        const openFolderCommand = isWindows ? "workbench.action.files.openFolder" : "workbench.action.files.openFileFolder"
+        vscode.commands.executeCommand(openFolderCommand)
+    }));    
+    
     // load pre-saved bookmarks
     const didLoadBookmarks: boolean = loadWorkspaceState();
-
+    
     // tree-view
     // const bookmarkProvider = new BookmarkProvider(bookmarks, context);
     // vscode.window.registerTreeDataProvider("bookmarksExplorer", bookmarkProvider);
@@ -41,6 +48,9 @@ export function activate(context: vscode.ExtensionContext) {
     const bookmarkExplorer = new BookmarksExplorer(bookmarks, context);
     const bookmarkProvider = bookmarkExplorer.getProvider();
     
+    registerOpenSettings();
+    registerSupportBookmarks();
+    registerHelpAndFeedbackView(context);
     // bookmarkProvider.showTreeView();
 
     context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(cfg => {
@@ -54,6 +64,10 @@ export function activate(context: vscode.ExtensionContext) {
             context.subscriptions.push(bookmarkDecorationType);
 
             updateDecorations();
+        }
+        
+        if (cfg.affectsConfiguration("bookmarks.saveBookmarksInProject")) {
+            saveWorkspaceState();
         }
     }));
 
@@ -89,7 +103,7 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.workspace.onDidChangeTextDocument(event => {
         if (activeEditor && event.document === activeEditor.document) {
 //            triggerUpdateDecorations();
-            let updatedBookmark: boolean = false;
+            let updatedBookmark = false;
 
             // workaround for formatters like Prettier (#118)
             if (vscode.workspace.getConfiguration("bookmarks").get("useWorkaroundForFormatters", false)) {
@@ -112,6 +126,27 @@ export function activate(context: vscode.ExtensionContext) {
         }
     }, null, context.subscriptions);
 
+    context.subscriptions.push(vscode.workspace.onDidRenameFiles(rename => {
+        
+        if (rename.files.length === 0) { return; } 
+        
+        rename.files.forEach(async file => {
+            const files = bookmarks.storage.fileList.map(file => file.path);
+            const stat = await vscode.workspace.fs.stat(file.newUri);
+            
+            if (stat.type === vscode.FileType.File) {
+                if (files.includes(file.oldUri.fsPath)) {
+                    bookmarks.storage.updateFilePath(file.oldUri.fsPath, file.newUri.fsPath);
+                }
+            }
+            if (stat.type === vscode.FileType.Directory) {
+                bookmarks.storage.updateDirectoryPath(file.oldUri.fsPath, file.newUri.fsPath);
+            }
+        });
+        bookmarkProvider.refresh();
+        saveWorkspaceState();
+    }));
+
     // Timeout
     function triggerUpdateDecorations() {
         if (timeout) {
@@ -125,10 +160,10 @@ export function activate(context: vscode.ExtensionContext) {
         updateDecorationsInActiveEditor(activeEditor, bookmarks, bookmarkDecorationType);
     }
 
-    vscode.commands.registerCommand("bookmarks.jumpTo", (documentPath, line, column: string) => {
+    vscode.commands.registerCommand("_bookmarks.jumpTo", (documentPath, line, column: string) => {
         const uriDocBookmark: vscode.Uri = vscode.Uri.file(documentPath);
         vscode.workspace.openTextDocument(uriDocBookmark).then(doc => {
-            vscode.window.showTextDocument(doc ).then(editor => {
+            vscode.window.showTextDocument(doc ).then(() => {
                 const lineInt: number = parseInt(line, 10);
                 const colunnInt: number = parseInt(column, 10);
                 // revealLine(lineInt - 1);
@@ -137,21 +172,17 @@ export function activate(context: vscode.ExtensionContext) {
         });
     });
 
-    vscode.commands.registerCommand("bookmarks.refresh", node => {
+    vscode.commands.registerCommand("bookmarks.refresh", () => {
         bookmarkProvider.refresh();
     });
 
-    vscode.commands.registerCommand("bookmarks.expandAll", node => {
-        bookmarkExplorer.expandAll();
-    });
-
-    vscode.commands.registerCommand("bookmarks.clearFromFile", node => {
+    vscode.commands.registerCommand("_bookmarks.clearFromFile", node => {
         bookmarks.clear(node.bookmark);
         saveWorkspaceState();
         updateDecorations();
     });
 
-    vscode.commands.registerCommand("bookmarks.deleteBookmark", node => {
+    vscode.commands.registerCommand("_bookmarks.deleteBookmark", node => {
         const book: BookmarkedFile = bookmarks.fromUri(node.command.arguments[0]);
         const index = book.indexOfBookmark(node.command.arguments[1] - 1); // bookmarks.indexOf({line: node.command.arguments[1] - 1});
         bookmarks.removeBookmark(index, node.command.arguments[1] - 1, book);
@@ -159,7 +190,7 @@ export function activate(context: vscode.ExtensionContext) {
         updateDecorations();
     });
 
-    vscode.commands.registerCommand("bookmarks.editLabel", node => {
+    vscode.commands.registerCommand("_bookmarks.editLabel", node => {
         const uriDocBookmark: vscode.Uri = vscode.Uri.file(node.command.arguments[0]);
         const book: BookmarkedFile = bookmarks.fromUri(uriDocBookmark.fsPath);
         const index = book.indexOfBookmark(node.command.arguments[1] - 1);
@@ -209,7 +240,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     function loadWorkspaceState(): boolean {
-        return loadBookmarks(bookmarks, context)
+        return loadBookmarks(bookmarks, context);
     }
 
     function saveWorkspaceState(): void {
@@ -235,14 +266,14 @@ export function activate(context: vscode.ExtensionContext) {
                 if (!currentWorkspaceFolder && vscode.workspace.workspaceFolders.length === 1) {
                     return aPath.split(inWorkspace.uri.fsPath).pop();
                 } else {
-                    return "$(file-submodule) " + inWorkspace.name + /*path.sep + */aPath.split(inWorkspace.uri.fsPath).pop();
+                    return codicons.file_submodule + " " + inWorkspace.name + aPath.split(inWorkspace.uri.fsPath).pop();
                 }
             }
             // const base: string = inWorkspace.name ? inWorkspace.name : inWorkspace.uri.fsPath;
             // return path.join(base, aPath.split(inWorkspace.uri.fsPath).pop());
             // return aPath.split(inWorkspace.uri.fsPath).pop();
         } else {
-            return "$(file-directory) " + aPath;
+            return codicons.file_directory + " " + aPath;
         }
     }
 
@@ -281,7 +312,7 @@ export function activate(context: vscode.ExtensionContext) {
             } else {
                 items.push({ description: "(Ln " + bookmarkLine.toString() + ", Col " + 
                 bookmarkColumn.toString() + ")", 
-                label: "$(tag) " + bookmarks.activeBookmark.bookmarks[index].label });
+                label: codicons.tag + " " + bookmarks.activeBookmark.bookmarks[index].label });
             }
         }
 
@@ -293,7 +324,7 @@ export function activate(context: vscode.ExtensionContext) {
             // matchOnDetail: true,
             onDidSelectItem: item => {
                 const itemT = <vscode.QuickPickItem> item;
-                const point: Point = Parser.parsePosition(itemT.description);
+                const point: Point = parsePosition(itemT.description);
                 if (point) {
                     revealPosition(point.line - 1, point.column - 1);
                 }
@@ -306,12 +337,12 @@ export function activate(context: vscode.ExtensionContext) {
                 return;
             }
             const itemT = <vscode.QuickPickItem> selection;
-            const point: Point = Parser.parsePosition(itemT.description);
+            const point: Point = parsePosition(itemT.description);
             if (point) {
                 revealPosition(point.line - 1, point.column - 1);
             }
     });
-    };
+    }
 
     function clear() {
         
@@ -323,13 +354,13 @@ export function activate(context: vscode.ExtensionContext) {
         bookmarks.clear();
         saveWorkspaceState();
         updateDecorations();
-    };
+    }
 
     function clearFromAllFiles() {
         bookmarks.clearAll();
         saveWorkspaceState();
         updateDecorations();
-    };
+    }
 
     function listFromAllFiles() {
 
@@ -390,8 +421,7 @@ export function activate(context: vscode.ExtensionContext) {
               // - no octicon - document in same workspaceFolder
               // - with octicon 'file-submodules' - document in another workspaceFolder
               // - with octicon - 'file-directory' - document outside any workspaceFolder
-              let itemsSorted: vscode.QuickPickItem[];
-              itemsSorted = items.sort(function(a: vscode.QuickPickItem, b: vscode.QuickPickItem): number {
+              const itemsSorted: vscode.QuickPickItem[] = items.sort(function(a: vscode.QuickPickItem, b: vscode.QuickPickItem): number {
                 if (!a.detail && !b.detail) {
                     return 0;
                 }
@@ -404,29 +434,29 @@ export function activate(context: vscode.ExtensionContext) {
                     return 1;
                 }
                 
-                if ((a.detail.toString().indexOf("$(file-submodule) ") === 0) && (b.detail.toString().indexOf("$(file-directory) ") === 0)) {
+                if ((a.detail.toString().indexOf(codicons.file_submodule + " ") === 0) && (b.detail.toString().indexOf(codicons.file_directory + " ") === 0)) {
                     return -1;
-                };
+                }
                 
-                if ((a.detail.toString().indexOf("$(file-directory) ") === 0) && (b.detail.toString().indexOf("$(file-submodule) ") === 0)) {
+                if ((a.detail.toString().indexOf(codicons.file_directory + " ") === 0) && (b.detail.toString().indexOf(codicons.file_submodule + " ") === 0)) {
                     return 1;
-                };
+                }
                 
-                if ((a.detail.toString().indexOf("$(file-submodule) ") === 0) && (b.detail.toString().indexOf("$(file-submodule) ") === -1)) {
+                if ((a.detail.toString().indexOf(codicons.file_submodule + " ") === 0) && (b.detail.toString().indexOf(codicons.file_submodule + " ") === -1)) {
                     return 1;
-                };
+                }
                 
-                if ((a.detail.toString().indexOf("$(file-submodule) ") === -1) && (b.detail.toString().indexOf("$(file-submodule) ") === 0)) {
+                if ((a.detail.toString().indexOf(codicons.file_submodule + " ") === -1) && (b.detail.toString().indexOf(codicons.file_submodule + " ") === 0)) {
                     return -1;
-                };
+                }
                 
-                if ((a.detail.toString().indexOf("$(file-directory) ") === 0) && (b.detail.toString().indexOf("$(file-directory) ") === -1)) {
+                if ((a.detail.toString().indexOf(codicons.file_directory + " ") === 0) && (b.detail.toString().indexOf(codicons.file_directory + " ") === -1)) {
                     return 1;
-                };
+                }
                 
-                if ((a.detail.toString().indexOf("$(file-directory) ") === -1) && (b.detail.toString().indexOf("$(file-directory) ") === 0)) {
+                if ((a.detail.toString().indexOf(codicons.file_directory + " ") === -1) && (b.detail.toString().indexOf(codicons.file_directory + " ") === 0)) {
                     return -1;
-                };
+                }
                 
                 return 0;
               });
@@ -444,11 +474,11 @@ export function activate(context: vscode.ExtensionContext) {
                           filePath = activeTextEditorPath;
                       } else {
                           // with octicon - document outside project
-                          if (itemT.detail.toString().indexOf("$(file-directory) ") === 0) {
-                              filePath = itemT.detail.toString().split("$(file-directory) ").pop();
+                          if (itemT.detail.toString().indexOf(codicons.file_directory + " ") === 0) {
+                              filePath = itemT.detail.toString().split(codicons.file_directory + " ").pop();
                           } else { // with octicon - documento from other workspaceFolder
-                            if (itemT.detail.toString().indexOf("$(file-submodule)") === 0) {
-                                filePath = itemT.detail.toString().split("$(file-submodule) ").pop();
+                            if (itemT.detail.toString().indexOf(codicons.file_submodule) === 0) {
+                                filePath = itemT.detail.toString().split(codicons.file_submodule + " ").pop();
                                 for (const wf of vscode.workspace.workspaceFolders) {
                                     if (wf.name === filePath.split(path.sep).shift()) {
                                         filePath = path.join(wf.uri.fsPath, filePath.split(path.sep).slice(1).join(path.sep));
@@ -470,7 +500,7 @@ export function activate(context: vscode.ExtensionContext) {
                           }
                       }
 
-                      const point: Point = Parser.parsePosition(itemT.description);
+                      const point: Point = parsePosition(itemT.description);
                       if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.uri.fsPath.toLowerCase() === filePath.toLowerCase()) {
                         if (point) {
                             revealPosition(point.line - 1, point.column - 1);
@@ -478,7 +508,7 @@ export function activate(context: vscode.ExtensionContext) {
                       } else {
                           const uriDocument: vscode.Uri = vscode.Uri.file(filePath);
                           vscode.workspace.openTextDocument(uriDocument).then(doc => {
-                              vscode.window.showTextDocument(doc, { preserveFocus: true, preview: true }).then(editor => {
+                              vscode.window.showTextDocument(doc, { preserveFocus: true, preview: true }).then(() => {
                                 if (point) {
                                     revealPosition(point.line - 1, point.column - 1);
                                 }
@@ -494,7 +524,7 @@ export function activate(context: vscode.ExtensionContext) {
                       } else {
                         const uriDocument: vscode.Uri = vscode.Uri.file(activeTextEditorPath);
                         vscode.workspace.openTextDocument(uriDocument).then(doc => {
-                            vscode.window.showTextDocument(doc).then(editor => {
+                            vscode.window.showTextDocument(doc).then(() => {
                                 revealLine(currentLine - 1);
                                 return;
                             });
@@ -506,7 +536,7 @@ export function activate(context: vscode.ExtensionContext) {
                       return;
                   }
 
-                  const point: Point = Parser.parsePosition(selection.description);
+                  const point: Point = parsePosition(selection.description);
                   if (!selection.detail) {
                     if (point) {
                         revealPosition(point.line - 1, point.column - 1);
@@ -514,11 +544,11 @@ export function activate(context: vscode.ExtensionContext) {
                   } else {
                       let newPath: string;
                       // with octicon - document outside project
-                      if (selection.detail.toString().indexOf("$(file-directory) ") === 0) {
-                          newPath = selection.detail.toString().split("$(file-directory) ").pop();
+                      if (selection.detail.toString().indexOf(codicons.file_directory + " ") === 0) {
+                          newPath = selection.detail.toString().split(codicons.file_directory + " ").pop();
                       } else {// no octicon - document inside project
-                        if (selection.detail.toString().indexOf("$(file-submodule)") === 0) {
-                            newPath = selection.detail.toString().split("$(file-submodule) ").pop();
+                        if (selection.detail.toString().indexOf(codicons.file_submodule) === 0) {
+                            newPath = selection.detail.toString().split(codicons.file_submodule + " ").pop();
                             for (const wf of vscode.workspace.workspaceFolders) {
                                 if (wf.name === newPath.split(path.sep).shift()) {
                                     newPath = path.join(wf.uri.fsPath, newPath.split(path.sep).slice(1).join(path.sep));
@@ -539,7 +569,7 @@ export function activate(context: vscode.ExtensionContext) {
                       }
                       const uriDocument: vscode.Uri = vscode.Uri.file(newPath);
                       vscode.workspace.openTextDocument(uriDocument).then(doc => {
-                          vscode.window.showTextDocument(doc).then(editor => {
+                          vscode.window.showTextDocument(doc).then(() => {
                             if (point) {
                                 revealPosition(point.line - 1, point.column - 1);
                             }        
@@ -549,7 +579,7 @@ export function activate(context: vscode.ExtensionContext) {
               });
             }  
         );
-    };
+    }
 
     function jumpToNext(direction: Directions) {
         
@@ -586,7 +616,7 @@ export function activate(context: vscode.ExtensionContext) {
                             bookmarks.activeBookmark.bookmarks[bookmarkIndex].column);
                         } else { 
                             vscode.workspace.openTextDocument(nextDocument.toString()).then(doc => {
-                                vscode.window.showTextDocument(doc).then(editor => {
+                                vscode.window.showTextDocument(doc).then(() => {
                                     const bookmarkIndex = direction === Directions.Forward ? 0 : bookmarks.activeBookmark.bookmarks.length - 1;
                                     revealPosition(bookmarks.activeBookmark.bookmarks[bookmarkIndex].line, 
                                         bookmarks.activeBookmark.bookmarks[bookmarkIndex].column);
@@ -602,7 +632,7 @@ export function activate(context: vscode.ExtensionContext) {
             .catch((error) => {
               console.log("activeBookmark.nextBookmark REJECT" + error);
             });
-    };
+    }
 
     function checkBookmarks(result: number | vscode.Position): boolean {
         if (result === NO_BOOKMARKS_BEFORE || result === NO_BOOKMARKS_AFTER) {
@@ -624,7 +654,7 @@ export function activate(context: vscode.ExtensionContext) {
                 return;
             }
             // 'empty'
-            if (bookmarkLabel === "" && (oldLabel === "" || jumpToPosition)) {
+            if (bookmarkLabel === "" && oldLabel === "") {
                 vscode.window.showWarningMessage("You must define a label for the bookmark.");
                 return;
             }
@@ -667,12 +697,12 @@ export function activate(context: vscode.ExtensionContext) {
 
         if (await bookmarks.toggle(selections)) {
             vscode.window.showTextDocument(vscode.window.activeTextEditor.document, {preview: false, viewColumn: vscode.window.activeTextEditor.viewColumn} );
-        };
+        }
 
         bookmarks.activeBookmark.sortBookmarks();
         saveWorkspaceState();
         updateDecorations();
-    };
+    }
 
     async function toggleLabeled() {
 
@@ -701,9 +731,11 @@ export function activate(context: vscode.ExtensionContext) {
         }
 
         // ask label
+        let oldLabel = "";
         if (suggestion === "" && selections.length === 1) {
             const index = bookmarks.activeBookmark.indexOfBookmark(selections[0].active.line);
-            suggestion = index > -1 ? bookmarks.activeBookmark.bookmarks[index].label : "";
+            oldLabel = index > -1 ? bookmarks.activeBookmark.bookmarks[index].label : "";
+            suggestion = oldLabel;
         }
         // let oldLabel: string = "";
         // if (selections.length === 1) {
@@ -716,15 +748,15 @@ export function activate(context: vscode.ExtensionContext) {
             value: suggestion
         };
         const newLabel = await vscode.window.showInputBox(ibo);
-        if (typeof newLabel === "undefined") { return };
-        if (newLabel === "") {
+        if (typeof newLabel === "undefined") { return; }
+        if (newLabel === "" && oldLabel === "") {
             vscode.window.showWarningMessage("You must define a label for the bookmark.");
             return;
         }
 
         if (await bookmarks.toggle(selections, newLabel)) {
             vscode.window.showTextDocument(vscode.window.activeTextEditor.document, {preview: false, viewColumn: vscode.window.activeTextEditor.viewColumn} );
-        };
+        }
 
         // sorted
         /* let itemsSorted = [] =*/
@@ -741,5 +773,5 @@ export function activate(context: vscode.ExtensionContext) {
         
         saveWorkspaceState();
         updateDecorations();
-    };
+    }
 }

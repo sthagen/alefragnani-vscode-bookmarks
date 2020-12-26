@@ -3,16 +3,13 @@
   <a title="Learn more about Bookmarks" href="http://github.com/alefragnani/vscode-bookmarks"><img src="https://raw.githubusercontent.com/alefragnani/vscode-bookmarks/master/images/vscode-bookmarks-logo-readme.png" alt="Bookmarks Logo" width="50%" /></a>
 </p>
 
-# What's new in Bookmarks 11.2
+# What's new in Bookmarks 12.1
 
-* Adds an all-new **Side Bar**
-* Adds **Label suggestion** based on selection
-* Adds **Multi cursor** support
-* Adds **Column Position** and **Label** support
-* Adds **Localization** support
-* Adds `Collapse All` command in the **Side Bar**
-* Adds **Hover Buttons** for files and Bookmarks in the **Side Bar**
-* Adds **workbench.colorCustomizations** support
+* Improved **Side Bar** usability
+* Adds automatic **Label suggestion** options
+* Full **Multi cursor** support
+* Support for **workbench.colorCustomizations** settings
+* Improved **Localization** options
 
 ## Support
 
@@ -34,8 +31,8 @@
 
 ## Sponsors
 
-<a title="Try CodeStream" href="https://sponsorlink.codestream.com/?utm_source=vscmarket&utm_campaign=bookmarks&utm_medium=banner"><img src="https://alt-images.codestream.com/codestream_logo_bookmarks.png" width="35%"/></a></br>
-Discussing code is now as easy as highlighting a block and typing a comment right from your IDE. Take the pain out of code reviews and improve code quality.<br> <a title="Try CodeStream" href="https://sponsorlink.codestream.com/?utm_source=vscmarket&utm_campaign=bookmarks&utm_medium=banner">Try it free</a>
+<a title="Learn more about CodeStream" href="https://sponsorlink.codestream.com/?utm_source=vscmarket&utm_campaign=bookmarks&utm_medium=banner"><img src="https://alt-images.codestream.com/codestream_logo_bookmarks.png" width="35%"/></a></br>
+Eliminate context switching and costly distractions. Create and merge PRs and perform code reviews from inside your IDE while using jump-to-definition, your keybindings, and other IDE favorites.<br> <a title="Learn more about CodeStream" href="https://sponsorlink.codestream.com/?utm_source=vscmarket&utm_campaign=bookmarks&utm_medium=banner">Learn more</a>
 
 <br>
 
@@ -49,11 +46,9 @@ Here are some of the features that **Bookmarks** provides:
 * Mark positions in your code and **give it name**
 * **Jump** forward and backward between bookmarks
 * Icons in **gutter** and **overview ruler**
-* See a list of all Bookmarks in one **file**
-* See a list of all Bookmarks in your **project**
+* See a list of all Bookmarks in one **file** and **project**
+* **Select lines** and **regions** with bookmarks
 * A dedicated **Side Bar**
-* **Select lines** with bookmarks
-* **Select regions** between bookmarks
 
 # Features
 
@@ -112,9 +107,9 @@ Manipulate the selection of lines _between_ bookmarks, up and down.
 
 ## Available Settings
 
-* Allow navigation through all files that contains bookmarks (`false` by default)
+* Allow navigation through all files that contains bookmarks (`true` by default)
 ```json
-    "bookmarks.navigateThroughAllFiles": true
+    "bookmarks.navigateThroughAllFiles": false
 ```
 
 * Allow navigation to wrap around at the first and last bookmarks in scope (current file or all files) (`true` by default)
@@ -201,14 +196,9 @@ Manipulate the selection of lines _between_ bookmarks, up and down.
 
 ## Side Bar
 
-The **Bookmarks** extension has its own **Side Bar**, giving you more free space in your Explorer view. You will have a few extra commands available:
+The **Bookmarks** extension has its own **Side Bar**, with a variety of commands to improve you productivity. 
 
-* Jump to Bookmark
-* Edit Label
-* Remove Bookmark
-* Clear Bookmark's file
-
-![Treeview](images/printscreen-activity-bar.png)
+![Side Bar](images/printscreen-activity-bar.png)
 
 ## Project and Session Based
 
