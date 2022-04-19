@@ -1,3 +1,98 @@
+## [13.2.4] - 2022-02-23
+### Internal
+- Update Tabnine URL
+
+## [13.2.3] - 2022-02-08
+### Internal
+- Duckly becomes a Sponsor
+
+## [13.2.2] - 2021-10-08
+### Internal
+- Update Tabnine URL
+
+## [13.2.1] - 2021-09-05
+### Internal
+- Remove unnecessary files from extension package (issue [#465](https://github.com/alefragnani/vscode-bookmarks/issues/465))
+
+## [13.2.0] - 2021-09-05
+### Added
+- New **Sticky Engine** with improved support to Formatters, Multi-cursor and Undo operations (issue [#463](https://github.com/alefragnani/vscode-bookmarks/issues/463))
+- `View as Tree` and `View as List` options in Side Bar (issue [#453](https://github.com/alefragnani/vscode-bookmarks/issues/453))
+- New command to Hide/Show bookmark position in Side Bar (issue [#143](https://github.com/alefragnani/vscode-bookmarks/issues/143))
+- Updated translations (issue [#464](https://github.com/alefragnani/vscode-bookmarks/issues/464))
+
+### Fixed
+- Bookmark positions didn't update after pasting content above (issue [#446](https://github.com/alefragnani/vscode-bookmarks/issues/446))
+- Bookmark positions didn't update after adding empty lines above (issue [#457](https://github.com/alefragnani/vscode-bookmarks/issues/457))
+- Bookmark moving off original line (issue [#168](https://github.com/alefragnani/vscode-bookmarks/issues/168))
+- Undo messes up bookmarks (issue [#116](https://github.com/alefragnani/vscode-bookmarks/issues/116))
+- `Toggle` command in Notebook cells causes duplicate editor to be opened (issue [#456](https://github.com/alefragnani/vscode-bookmarks/issues/456))
+- `Toggle` command causes exiting diff editor (issue [#440](https://github.com/alefragnani/vscode-bookmarks/issues/440))
+
+## [13.1.0] - 2021-06-10
+### Added
+- Support **Virtual Workspaces** (issue [#432](https://github.com/alefragnani/vscode-bookmarks/issues/432))
+- Support **Workspace Trust** (issue [#430](https://github.com/alefragnani/vscode-bookmarks/issues/430))
+- Return to line/column when cancel List or List from All Files (issue [#386](https://github.com/alefragnani/vscode-bookmarks/issues/386))
+- Update pt-br translation (issue [#376](https://github.com/alefragnani/vscode-bookmarks/issues/376))
+
+### Fixed
+- Latest bookmark could not be removed (issue [#422](https://github.com/alefragnani/vscode-bookmarks/issues/422))
+- Minor grammatical and spelling issue (Thanks to @derekpock [PR #388](https://github.com/alefragnani/vscode-bookmarks/pull/388))
+
+### Internal
+- Security Alert: lodash (dependabot [PR #433](https://github.com/alefragnani/vscode-bookmarks/pull/433))
+- Security Alert: ssri (dependabot [PR #425](https://github.com/alefragnani/vscode-bookmarks/pull/425))
+- Security Alert: y18n (dependabot [PR #418](https://github.com/alefragnani/vscode-bookmarks/pull/418))
+- Security Alert: elliptic (dependabot [PR #408](https://github.com/alefragnani/vscode-bookmarks/pull/408))
+
+## [13.0.4] - 2021-03-13
+### Fixed
+- Bookmarks on deleted/missing files breaks jumping (issue [#390](https://github.com/alefragnani/vscode-bookmarks/issues/390))
+- Toggling bookmarks on Untitled documents does not work (issue [#391](https://github.com/alefragnani/vscode-bookmarks/issues/391))
+
+## [13.0.3] - 2021-03-04
+### Internal
+- Update Tabnine URL
+
+## [13.0.2] - 2021-02-25
+### Fixed
+- Command `bookmarks.toggle` not found - loading empty workspace with random files (issue [#395](https://github.com/alefragnani/vscode-bookmarks/issues/395))
+
+## [13.0.1] - 2021-02-15
+### Fixed
+- Command `bookmarks.toggle` not found - extension was not activated (issue [#387](https://github.com/alefragnani/vscode-bookmarks/issues/387))
+
+## [13.0.0] - 2021-02-13
+### Added
+- Support Remote Development (issue [#230](https://github.com/alefragnani/vscode-bookmarks/issues/230))
+- Improvements on multi-root support (issue [#193](https://github.com/alefragnani/vscode-bookmarks/issues/193))
+- Group bookmarks by folder on multi-root in Side Bar (issue [#249](https://github.com/alefragnani/vscode-bookmarks/issues/249))
+- Multi-platform support (issue [#205](https://github.com/alefragnani/vscode-bookmarks/issues/205))
+
+### Internal
+- Do not show welcome message if installed by Settings Sync (issue [#377](https://github.com/alefragnani/vscode-bookmarks/issues/377))
+
+## [12.1.4] - 2021-01-18
+### Internal
+- Update Tabnine URL
+
+## [12.1.3] - 2021-01-16
+### Changed
+- Added new translations (Thanks to @loniceras [PR #367](https://github.com/alefragnani/vscode-bookmarks/pull/367))
+
+### Internal
+- Update Tabnine URL
+
+## [12.1.2] - 2021-01-07
+### Internal
+- Update Tabnine logo
+
+## [12.1.1] - 2021-01-07
+### Internal
+- Update whats-new submodule API (issue [#373](https://github.com/alefragnani/vscode-bookmarks/issues/373))
+- Tabnine becomes a Sponsor
+
 ## [12.1.0] - 2020-12-23
 ### Added
 - Support submenu for editor commands (issue [#351](https://github.com/alefragnani/vscode-bookmarks/issues/351))

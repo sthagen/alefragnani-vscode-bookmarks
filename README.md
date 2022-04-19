@@ -1,17 +1,23 @@
+[![](https://vsmarketplacebadge.apphb.com/version-short/alefragnani.bookmarks.svg)](https://marketplace.visualstudio.com/items?itemName=alefragnani.bookmarks)
+[![](https://vsmarketplacebadge.apphb.com/downloads-short/alefragnani.bookmarks.svg)](https://marketplace.visualstudio.com/items?itemName=alefragnani.bookmarks)
+[![](https://vsmarketplacebadge.apphb.com/rating-short/alefragnani.bookmarks.svg)](https://marketplace.visualstudio.com/items?itemName=alefragnani.bookmarks)
+
 <p align="center">
   <br />
   <a title="Learn more about Bookmarks" href="http://github.com/alefragnani/vscode-bookmarks"><img src="https://raw.githubusercontent.com/alefragnani/vscode-bookmarks/master/images/vscode-bookmarks-logo-readme.png" alt="Bookmarks Logo" width="50%" /></a>
 </p>
 
-# What's new in Bookmarks 12.1
+# What's new in Bookmarks 13.2
 
+* New **Sticky Engine**
+* Adds **Virtual Workspaces** support
+* Adds **Workspace Trust** support
+* Full **Remote Development** support
+* Improved **Multi-root** support
+* Adds **Cross-platform** support
 * Improved **Side Bar** usability
-* Adds automatic **Label suggestion** options
-* Full **Multi cursor** support
-* Support for **workbench.colorCustomizations** settings
-* Improved **Localization** options
 
-## Support
+# Support
 
 **Bookmarks** is an extension created for **Visual Studio Code**. If you find it useful, please consider supporting it.
 
@@ -34,6 +40,20 @@
 <a title="Learn more about CodeStream" href="https://sponsorlink.codestream.com/?utm_source=vscmarket&utm_campaign=bookmarks&utm_medium=banner"><img src="https://alt-images.codestream.com/codestream_logo_bookmarks.png" width="35%"/></a></br>
 Eliminate context switching and costly distractions. Create and merge PRs and perform code reviews from inside your IDE while using jump-to-definition, your keybindings, and other IDE favorites.<br> <a title="Learn more about CodeStream" href="https://sponsorlink.codestream.com/?utm_source=vscmarket&utm_campaign=bookmarks&utm_medium=banner">Learn more</a>
 
+<br>
+<a title="Learn more about Tabnine" href="https://bit.ly/3M0p0nd"><img src="https://github.com/alefragnani/oss-resources/raw/master/images/sponsors/tabnine-hi-res.png" width="26%"/></a></br>
+Improve your Bookmarks experience with Tabnine code completions! Tabnine is a free powerful Artificial Intelligence assistant designed to help you code faster, reduce mistakes, and discover best coding practices - without ever leaving the comfort of VSCode.
+<br>
+<br>
+No more memorizing coding syntax, worrying about typos, neglecting to add that crucial comma, or even search for coding solutions online. Start reducing your development costs, deliver reliable code faster, and explore best coding practices.
+Tabnine is trusted by more than a million developers worldwide.<br> <a title="Learn more about Tabnine" href="https://bit.ly/3M0p0nd">Get it now</a>
+
+<br>
+<br>
+<a title="Try it out for free" href="https://bit.ly/3Hxe4e4"><img src="https://storage.googleapis.com/gitduck/img/duckly-sponsor-vsc-opt.png" width="25%"/></a></br>
+Easy pair programming with any IDE. Duckly enables you to talk, share your code in real-time, server and terminal with people using different IDEs.<br> <a title="Try it out for free" href="https://bit.ly/3Hxe4e4">Try it out for free</a>
+
+<br>
 <br>
 
 # Bookmarks
@@ -85,11 +105,28 @@ Quicky move between bookmarks backward and forward, even if located outside the 
 
 List all bookmarks from the current file/project and easily navigate to any of them. It shows a line preview and temporarily scroll to its position.
 
-![List](images/printscreen-list-from-all-files.png)
+![List](images/bookmarks-list-from-all-files.gif)
 
 * Bookmarks from the active file only shows the line number and its contents
-* Bookmarks from other files in the project also shows the relative path and filename
-* Bookmarks from files outside the project are denoted with ![Folder](images/bookmarks-folder-icon.png)
+* Bookmarks from other files in the project also shows the relative path
+
+## Improved Multi-root support
+
+When you work with **multi-root** workspaces, the extension can manage the bookmarks individually for each folder. 
+
+Simply define `saveBookmarksInProject` as `true` on your **User Settings** or in the **Workspace Settings**, and when you run the `Bookmarks: List from All Files` command, you will be able to select from which folder the bookmarks will be shown.
+
+![List](images/bookmarks-list-from-all-files-multi-root.gif)
+
+### Remote Development support
+
+The extension now fully supports **Remote Development** scenarios. 
+
+It means that when you connect to a _remote_ location, like a Docker Container, SSH or WSL, the extension will be available, ready to be used. 
+
+> You don't need to install the extension on the remote anymore.
+
+Better yet, if you use `bookmarks.saveBookmarksInProject` setting defined as `true`, the bookmarks saved locally _will be available_ remotely, and you will be able to navigate and update the bookmarks. Just like it was a resource from folder you opened remotely.
 
 ## Selection
 
@@ -99,7 +136,7 @@ You can use **Bookmarks** to easily select lines or text blocks. Simply toggle b
 
 Select all bookmarked lines. Specially useful while working with log files.
 
-![Select Lines](images/printscreen-select-lines.gif)
+![Select Lines](images/bookmarks-select-lines.gif)
 
 #### Expand Selection to the Next/Previous Bookmark or Shrink the Selection
 
@@ -139,12 +176,26 @@ Manipulate the selection of lines _between_ bookmarks, up and down.
     "bookmarks.showCommandsInContextMenu": true
 ```
 
+* **Experimental**. Enables the new **Sticky engine** with support for Formatters, improved source change detections and undo operations _(`true` by default)_
+
+```json
+    "bookmarks.experimental.enableNewStickyEngine": false
+```
+
+* "Specifies whether bookmarks on deleted line should be kept on file, moving it down to the next line, instead of deleting it with the line where it was toggled." _(`false` by default)_
+
+```json
+    "bookmarks.keepBookmarksOnLineDelete": true
+```
+
+> **Limitation:** It does not support `Undo` operations. It means that, once you delete a line and the bookmark is moved to the next available line, the `Undo` operation won't move the bookmark back to the previous line. The next line is now the new location of the bookmark.
+
 * Use a **workaround** for formatters, like Prettier, which does not notify on document changes and messes Bookmark's _Sticky_ behavior _(`false` by default)_
 
 ```json
     "bookmarks.useWorkaroundForFormatters": true
 ```
-> This workaround should be temporary, until a proper research and suggested APIs are available  
+> This workaround can be turned off if you are using the new Sticky Engine (setting above)  
 
 * Choose if the Side Bar should start expanded (`false` by default)
 ```json
@@ -154,7 +205,7 @@ Manipulate the selection of lines _between_ bookmarks, up and down.
 * Choose how multi cursor handles already bookmarked lines (`allLinesAtOnce` by default)
 
   * `allLinesAtOnce`: Creates bookmarks in all selected lines at once, if at least one of the lines don't have a bookmark
-  * `eachLineIndependently`: Literally toggles a bookmark in each line, instead of making all lines equals
+  * `eachLineIndependently`: Literally toggles a bookmark in each line, instead of making all lines equal
 
 ```json
     "bookmarks.multicursor.toggleMode": "eachLineIndependently"
@@ -198,7 +249,9 @@ Manipulate the selection of lines _between_ bookmarks, up and down.
 
 The **Bookmarks** extension has its own **Side Bar**, with a variety of commands to improve you productivity. 
 
-![Side Bar](images/printscreen-activity-bar.png)
+| Single Folder | Multi-root Workspace |
+|---------------|------------|
+| ![Side Bar](images/printscreen-activity-bar.png) | ![Side Bar](images/printscreen-activity-bar-multi-root.png) |
 
 ## Project and Session Based
 
@@ -208,4 +261,4 @@ It also works even if you only _preview_ a file (simple click in TreeView). You 
 
 # License
 
-[MIT](LICENSE.md) &copy; Alessandro Fragnani
+[GPL-3.0](LICENSE.md) &copy; Alessandro Fragnani

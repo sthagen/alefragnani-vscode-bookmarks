@@ -1,37 +1,46 @@
 /*---------------------------------------------------------------------------------------------
 *  Copyright (c) Alessandro Fragnani. All rights reserved.
-*  Licensed under the MIT License. See License.md in the project root for license information.
+*  Licensed under the GPLv3 License. See License.md in the project root for license information.
 *--------------------------------------------------------------------------------------------*/
 
-import path = require("path");
 import * as vscode from "vscode";
+import { Position, TextDocument, Uri } from "vscode";
 import { codicons } from "vscode-ext-codicons";
-import { BookmarkedFile, NO_BOOKMARKS_AFTER, NO_BOOKMARKS_BEFORE, NO_MORE_BOOKMARKS } from "../vscode-bookmarks-core/src/api/bookmark";
-import { Directions, isWindows, SEARCH_EDITOR_SCHEME } from "../vscode-bookmarks-core/src/api/constants";
+import { BookmarkQuickPickItem } from "../vscode-bookmarks-core/src/bookmark";
+import { NO_BOOKMARKS_AFTER, NO_BOOKMARKS_BEFORE, NO_MORE_BOOKMARKS } from "../vscode-bookmarks-core/src/constants";
+import { Directions, isWindows, SEARCH_EDITOR_SCHEME } from "../vscode-bookmarks-core/src/constants";
 import { Container } from "../vscode-bookmarks-core/src/container";
 import { createTextEditorDecoration, updateDecorationsInActiveEditor } from "../vscode-bookmarks-core/src/decoration";
-import { BookmarksController } from "../vscode-bookmarks-core/src/model/bookmarks";
-import { loadBookmarks, saveBookmarks } from "../vscode-bookmarks-core/src/model/workspaceState";
+import { File } from "../vscode-bookmarks-core/src/file";
+import { Controller } from "../vscode-bookmarks-core/src/controller";
+import { indexOfBookmark, listBookmarks, nextBookmark, sortBookmarks } from "../vscode-bookmarks-core/src/operations";
+import { loadBookmarks, saveBookmarks } from "../vscode-bookmarks-core/src/workspaceState";
+import { pickController } from "../vscode-bookmarks-core/src/quickpick/controllerPicker";
 import { expandSelectionToNextBookmark, selectBookmarkedLines, shrinkSelection } from "../vscode-bookmarks-core/src/selections";
 import { BookmarksExplorer } from "../vscode-bookmarks-core/src/sidebar/bookmarkProvider";
 import { parsePosition, Point } from "../vscode-bookmarks-core/src/sidebar/parser";
-import { Sticky } from "../vscode-bookmarks-core/src/sticky/sticky";
+import { Sticky } from "../vscode-bookmarks-core/src/stickyLegacy";
+import { updateStickyBookmarks } from "../vscode-bookmarks-core/src/sticky";
 import { suggestLabel, useSelectionWhenAvailable } from "../vscode-bookmarks-core/src/suggestion";
+import { appendPath, getRelativePath } from "../vscode-bookmarks-core/src/utils/fs";
+import { isInDiffEditor, previewPositionInDocument, revealPosition } from "../vscode-bookmarks-core/src/utils/reveal";
 import { registerOpenSettings } from "./commands/openSettings";
 import { registerSupportBookmarks } from "./commands/supportBookmarks";
 import { registerHelpAndFeedbackView } from "./sidebar/helpAndFeedbackView";
 import { registerWhatsNew } from "./whats-new/commands";
+import { ViewAs } from "../vscode-bookmarks-core/src/sidebar/nodes";
 
 // this method is called when vs code is activated
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
 
     Container.context = context;
   
-    const bookmarks: BookmarksController = new BookmarksController();
+    let activeController: Controller;
+    let controllers: Controller[] = [];
     let activeEditorCountLine: number;
     let timeout: NodeJS.Timer;
 
-    registerWhatsNew();
+    await registerWhatsNew();
     
     context.subscriptions.push(vscode.commands.registerCommand("_bookmarks.openFolderWelcome", () => {
         const openFolderCommand = isWindows ? "workbench.action.files.openFolder" : "workbench.action.files.openFileFolder"
@@ -39,63 +48,81 @@ export function activate(context: vscode.ExtensionContext) {
     }));    
     
     // load pre-saved bookmarks
-    const didLoadBookmarks: boolean = loadWorkspaceState();
-    
-    // tree-view
-    // const bookmarkProvider = new BookmarkProvider(bookmarks, context);
-    // vscode.window.registerTreeDataProvider("bookmarksExplorer", bookmarkProvider);
-    
-    const bookmarkExplorer = new BookmarksExplorer(bookmarks, context);
-    const bookmarkProvider = bookmarkExplorer.getProvider();
+    await loadWorkspaceState();
     
     registerOpenSettings();
     registerSupportBookmarks();
     registerHelpAndFeedbackView(context);
-    // bookmarkProvider.showTreeView();
 
     context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(cfg => {
         // Allow change the gutterIcon without reload
-        if (cfg.affectsConfiguration("bookmarks.gutterIconPath")) {
+        if (cfg.affectsConfiguration("bookmarks.gutterIconFillColor") || 
+            cfg.affectsConfiguration("bookmarks.gutterIconBorderColor")) {
             if (bookmarkDecorationType) {
                 bookmarkDecorationType.dispose();
             }
 
-            bookmarkDecorationType = createTextEditorDecoration(context);
+            bookmarkDecorationType = createTextEditorDecoration();
             context.subscriptions.push(bookmarkDecorationType);
 
             updateDecorations();
+            bookmarkProvider.refresh();
         }
         
         if (cfg.affectsConfiguration("bookmarks.saveBookmarksInProject")) {
+            splitOrMergeFilesInMultiRootControllers();
             saveWorkspaceState();
         }
     }));
 
-    let bookmarkDecorationType = createTextEditorDecoration(context);
+    let bookmarkDecorationType = createTextEditorDecoration();
     context.subscriptions.push(bookmarkDecorationType);
 
     // Connect it to the Editors Events
     let activeEditor = vscode.window.activeTextEditor;
 
     if (activeEditor) {
-        if (!didLoadBookmarks) {
-            bookmarks.add(activeEditor.document.uri.fsPath);
-        }
+        getActiveController(activeEditor.document);
+        activeController.addFile(activeEditor.document.uri);
         activeEditorCountLine = activeEditor.document.lineCount;
-        bookmarks.activeBookmark = bookmarks.fromUri(activeEditor.document.uri.fsPath);
+        activeController.activeFile = activeController.fromUri(activeEditor.document.uri);
         triggerUpdateDecorations();
     }
 
-    // new docs
-    vscode.workspace.onDidOpenTextDocument(doc => {
-        bookmarks.add(doc.uri.fsPath);
-    });
+    const bookmarkExplorer = new BookmarksExplorer(controllers);
+    const bookmarkProvider = bookmarkExplorer.getProvider();    
+
+    vscode.commands.registerCommand("_bookmarks.sidebar.hidePosition", () => toggleSidebarPositionVisibility(false));
+    vscode.commands.registerCommand("_bookmarks.sidebar.showPosition", () => toggleSidebarPositionVisibility(true));
+    vscode.commands.executeCommand("setContext", "bookmarks.isHidingPosition", 
+        Container.context.globalState.get<boolean>("bookmarks.sidebar.hidePosition", false));
+    function toggleSidebarPositionVisibility(visible: boolean) {
+        vscode.commands.executeCommand("setContext", "bookmarks.isHidingPosition", !visible);
+        Container.context.globalState.update("bookmarks.sidebar.hidePosition", !visible);
+        bookmarkProvider.refresh();
+    }   
+    
+    const viewAsList = Container.context.globalState.get<boolean>("viewAsList", false);
+    vscode.commands.executeCommand("setContext", "bookmarks.viewAsList", viewAsList);
+    vscode.commands.registerCommand("_bookmarks.viewAsTree#sideBar", () => toggleViewAs(ViewAs.VIEW_AS_TREE));
+    vscode.commands.registerCommand("_bookmarks.viewAsList#sideBar", () => toggleViewAs(ViewAs.VIEW_AS_LIST));
+    function toggleViewAs(view: ViewAs) {
+        if (view === ViewAs.VIEW_AS_LIST) {
+            vscode.commands.executeCommand("setContext", "bookmarks.viewAsList", true);
+        } else {
+            vscode.commands.executeCommand("setContext", "bookmarks.viewAsList", false);
+        }
+        Container.context.globalState.update("viewAsList", view === ViewAs.VIEW_AS_LIST);
+        bookmarkProvider.refresh();
+    }
 
     vscode.window.onDidChangeActiveTextEditor(editor => {
         activeEditor = editor;
         if (editor) {
             activeEditorCountLine = editor.document.lineCount;
-            bookmarks.activeBookmark = bookmarks.fromUri(editor.document.uri.fsPath);
+            getActiveController(editor.document);
+            activeController.addFile(editor.document.uri);
+            activeController.activeFile = activeController.fromUri(editor.document.uri);
             triggerUpdateDecorations();
         }
     }, null, context.subscriptions);
@@ -112,9 +139,14 @@ export function activate(context: vscode.ExtensionContext) {
             }
 
             // call sticky function when the activeEditor is changed
-            if (bookmarks.activeBookmark && bookmarks.activeBookmark.bookmarks.length > 0) {
-                updatedBookmark = Sticky.stickyBookmarks(event, activeEditorCountLine, bookmarks.activeBookmark,
-                activeEditor, bookmarks);
+            if (activeController.activeFile && activeController.activeFile.bookmarks.length > 0) {
+                if (vscode.workspace.getConfiguration("bookmarks").get<boolean>("experimental.enableNewStickyEngine", true)) {
+                    updatedBookmark = updateStickyBookmarks(event, activeController.activeFile,
+                        activeEditor, activeController);
+                } else {
+                    updatedBookmark = Sticky.stickyBookmarks(event, activeEditorCountLine, activeController.activeFile,
+                        activeEditor, activeController);
+                }
             }
 
             activeEditorCountLine = event.document.lineCount;
@@ -126,25 +158,33 @@ export function activate(context: vscode.ExtensionContext) {
         }
     }, null, context.subscriptions);
 
-    context.subscriptions.push(vscode.workspace.onDidRenameFiles(rename => {
+    context.subscriptions.push(vscode.workspace.onDidRenameFiles(async rename => {
         
         if (rename.files.length === 0) { return; } 
         
-        rename.files.forEach(async file => {
-            const files = bookmarks.storage.fileList.map(file => file.path);
+        for (const file of rename.files) {
+            const files = activeController.files.map(file => file.path);
             const stat = await vscode.workspace.fs.stat(file.newUri);
             
+            const fileRelativeOldPath = getRelativePath(activeController.workspaceFolder.uri.path, file.oldUri.path);
+            const fileRelativeNewPath = getRelativePath(activeController.workspaceFolder.uri.path, file.newUri.path);
+
             if (stat.type === vscode.FileType.File) {
-                if (files.includes(file.oldUri.fsPath)) {
-                    bookmarks.storage.updateFilePath(file.oldUri.fsPath, file.newUri.fsPath);
+                if (files.includes(fileRelativeOldPath)) {
+                    activeController.updateFilePath(fileRelativeOldPath, fileRelativeNewPath);
                 }
             }
             if (stat.type === vscode.FileType.Directory) {
-                bookmarks.storage.updateDirectoryPath(file.oldUri.fsPath, file.newUri.fsPath);
+                activeController.updateDirectoryPath(fileRelativeOldPath, fileRelativeNewPath);
             }
-        });
+        }
+
         bookmarkProvider.refresh();
         saveWorkspaceState();
+        if (activeEditor) {
+            activeController.activeFile = activeController.fromUri(activeEditor.document.uri);
+            updateDecorations();
+        }
     }));
 
     // Timeout
@@ -157,16 +197,16 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Evaluate (prepare the list) and DRAW
     function updateDecorations() {
-        updateDecorationsInActiveEditor(activeEditor, bookmarks, bookmarkDecorationType);
+        updateDecorationsInActiveEditor(activeEditor, activeController, bookmarkDecorationType);
     }
 
-    vscode.commands.registerCommand("_bookmarks.jumpTo", (documentPath, line, column: string) => {
-        const uriDocBookmark: vscode.Uri = vscode.Uri.file(documentPath);
-        vscode.workspace.openTextDocument(uriDocBookmark).then(doc => {
+    updateDecorations();
+
+    vscode.commands.registerCommand("_bookmarks.jumpTo", (documentPath, line, column: string, uri: Uri) => {
+        vscode.workspace.openTextDocument(uri).then(doc => {
             vscode.window.showTextDocument(doc ).then(() => {
                 const lineInt: number = parseInt(line, 10);
                 const colunnInt: number = parseInt(column, 10);
-                // revealLine(lineInt - 1);
                 revealPosition(lineInt - 1, colunnInt - 1);
             });
         });
@@ -177,36 +217,34 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     vscode.commands.registerCommand("_bookmarks.clearFromFile", node => {
-        bookmarks.clear(node.bookmark);
+        activeController.clear(node.bookmark);
         saveWorkspaceState();
         updateDecorations();
     });
 
     vscode.commands.registerCommand("_bookmarks.deleteBookmark", node => {
-        const book: BookmarkedFile = bookmarks.fromUri(node.command.arguments[0]);
-        const index = book.indexOfBookmark(node.command.arguments[1] - 1); // bookmarks.indexOf({line: node.command.arguments[1] - 1});
-        bookmarks.removeBookmark(index, node.command.arguments[1] - 1, book);
+        const book: File = activeController.fromUri(node.command.arguments[3]);
+        const index = indexOfBookmark(book, node.command.arguments[1] - 1); 
+        activeController.removeBookmark(index, node.command.arguments[1] - 1, book);
         saveWorkspaceState();
         updateDecorations();
     });
 
     vscode.commands.registerCommand("_bookmarks.editLabel", node => {
-        const uriDocBookmark: vscode.Uri = vscode.Uri.file(node.command.arguments[0]);
-        const book: BookmarkedFile = bookmarks.fromUri(uriDocBookmark.fsPath);
-        const index = book.indexOfBookmark(node.command.arguments[1] - 1);
+        const book: File = activeController.fromUri(node.command.arguments[3]);
+        const index = indexOfBookmark(book, node.command.arguments[1] - 1);
 
         const position: vscode.Position = new vscode.Position(node.command.arguments[1] - 1, 
             node.command.arguments[2] - 1);
-        // book.bookmarks[index].label = "novo label";
         askForBookmarkLabel(index, position, book.bookmarks[index].label, false, book);
     });
 
     vscode.commands.registerCommand("bookmarks.clear", () => clear());
     vscode.commands.registerCommand("bookmarks.clearFromAllFiles", () => clearFromAllFiles());
-    vscode.commands.registerCommand("bookmarks.selectLines", () => selectBookmarkedLines(bookmarks));
-    vscode.commands.registerCommand("bookmarks.expandSelectionToNext", () => expandSelectionToNextBookmark(bookmarks, Directions.Forward));
-    vscode.commands.registerCommand("bookmarks.expandSelectionToPrevious", () => expandSelectionToNextBookmark(bookmarks, Directions.Backward));
-    vscode.commands.registerCommand("bookmarks.shrinkSelection", () => shrinkSelection(bookmarks));
+    vscode.commands.registerCommand("bookmarks.selectLines", () => selectBookmarkedLines(activeController));
+    vscode.commands.registerCommand("bookmarks.expandSelectionToNext", () => expandSelectionToNextBookmark(activeController, Directions.Forward));
+    vscode.commands.registerCommand("bookmarks.expandSelectionToPrevious", () => expandSelectionToNextBookmark(activeController, Directions.Backward));
+    vscode.commands.registerCommand("bookmarks.shrinkSelection", () => shrinkSelection(activeController));
     vscode.commands.registerCommand("bookmarks.toggle", () => toggle());
     vscode.commands.registerCommand("bookmarks.toggleLabeled", () => toggleLabeled());    
     vscode.commands.registerCommand("bookmarks.jumpToNext", () => jumpToNext(Directions.Forward));
@@ -214,70 +252,90 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand("bookmarks.list", () => list());
     vscode.commands.registerCommand("bookmarks.listFromAllFiles", () => listFromAllFiles());
     
-    function revealLine(line: number) {
-        let reviewType: vscode.TextEditorRevealType = vscode.TextEditorRevealType.InCenter;
-        if (line === vscode.window.activeTextEditor.selection.active.line) {
-            reviewType = vscode.TextEditorRevealType.InCenterIfOutsideViewport;
+    function getActiveController(document: TextDocument): void {
+        // system files don't have workspace, so use the first one [0]
+        if (!vscode.workspace.getWorkspaceFolder(document.uri)) {
+            activeController = controllers[0];
+            return;
         }
-        const newSe = new vscode.Selection(line, 0, line, 0);
-        vscode.window.activeTextEditor.selection = newSe;
-        vscode.window.activeTextEditor.revealRange(newSe, reviewType);
-    }
 
-    function revealPosition(line, column: number) {
-
-        if (isNaN(column)) {
-            revealLine(line);
-        } else {
-            let reviewType: vscode.TextEditorRevealType = vscode.TextEditorRevealType.InCenter;
-            if (line === vscode.window.activeTextEditor.selection.active.line) {
-                reviewType = vscode.TextEditorRevealType.InCenterIfOutsideViewport;
-            }
-            const newSe = new vscode.Selection(line, column, line, column);
-            vscode.window.activeTextEditor.selection = newSe;
-            vscode.window.activeTextEditor.revealRange(newSe, reviewType);
+        if (controllers.length > 1) {
+            activeController = controllers.find(ctrl =>
+                ctrl.workspaceFolder.uri.path === vscode.workspace.getWorkspaceFolder(document.uri).uri.path);
         }
     }
 
-    function loadWorkspaceState(): boolean {
-        return loadBookmarks(bookmarks, context);
+    function splitOrMergeFilesInMultiRootControllers(): void {
+        // 
+        if (vscode.workspace.workspaceFolders.length < 2) {
+            return;
+        }
+
+        //?? needs work
+        const saveBookmarksInProject = vscode.workspace.getConfiguration("bookmarks").get("saveBookmarksInProject", false);
+
+        if (saveBookmarksInProject) {
+            const validFiles = activeController.files.filter(file => !file.path.startsWith(".."));
+            activeController.files = [...validFiles];
+        }
+    }
+
+    async function loadWorkspaceState(): Promise<void> {
+
+        // no workspace, load as `undefined` and will always be from `workspaceState`
+        if (!vscode.workspace.workspaceFolders) {
+            const ctrl = await loadBookmarks(undefined);
+            controllers.push(ctrl);
+            activeController = ctrl;
+            return;
+        }
+
+        // NOT `saveBookmarksInProject`
+        if (!vscode.workspace.getConfiguration("bookmarks").get("saveBookmarksInProject", false)) {
+            //if (vscode.workspace.workspaceFolders.length > 1) {
+            // no matter how many workspaceFolders exists, will always load from [0] because even with 
+            // multi-root, there would be no way to load state from different folders
+            const ctrl = await loadBookmarks(vscode.workspace.workspaceFolders[0]);
+            controllers.push(ctrl);
+            activeController = ctrl;
+            return;
+        }
+
+        // `saveBookmarksInProject` TRUE
+        // single or multi-root, will load from each `workspaceFolder`
+        controllers = await Promise.all(
+            vscode.workspace.workspaceFolders!.map(async workspaceFolder => {
+                const ctrl = await loadBookmarks(workspaceFolder);
+                return ctrl;
+            })
+        );
+        if (controllers.length === 1) {
+            activeController = controllers[0];
+        }
     }
 
     function saveWorkspaceState(): void {
-        saveBookmarks(bookmarks, context);
-    }
-
-    function removeBasePathFrom(aPath: string, currentWorkspaceFolder: vscode.WorkspaceFolder): string {
+        // no workspace, there is only one `controller`, and will always be from `workspaceState`
         if (!vscode.workspace.workspaceFolders) {
-            return aPath;
-        }
-        
-        let inWorkspace: vscode.WorkspaceFolder;
-        for (const wf of vscode.workspace.workspaceFolders) {
-            if (aPath.indexOf(wf.uri.fsPath) === 0) {
-                inWorkspace = wf;
-            }
+            saveBookmarks(activeController);
+            return;
         }
 
-        if (inWorkspace) {
-            if (inWorkspace === currentWorkspaceFolder) {
-                return aPath.split(inWorkspace.uri.fsPath).pop();
-            } else {
-                if (!currentWorkspaceFolder && vscode.workspace.workspaceFolders.length === 1) {
-                    return aPath.split(inWorkspace.uri.fsPath).pop();
-                } else {
-                    return codicons.file_submodule + " " + inWorkspace.name + aPath.split(inWorkspace.uri.fsPath).pop();
-                }
-            }
-            // const base: string = inWorkspace.name ? inWorkspace.name : inWorkspace.uri.fsPath;
-            // return path.join(base, aPath.split(inWorkspace.uri.fsPath).pop());
-            // return aPath.split(inWorkspace.uri.fsPath).pop();
-        } else {
-            return codicons.file_directory + " " + aPath;
+        // NOT `saveBookmarksInProject`, will load from `workspaceFolders[0]` - as before
+        if (!vscode.workspace.getConfiguration("bookmarks").get("saveBookmarksInProject", false)) {
+            // no matter how many workspaceFolders exists, will always save to [0] because even with
+            // multi-root, there would be no way to save state to different folders
+            saveBookmarks(activeController);
+            return;
         }
+
+        // `saveBookmarksInProject` TRUE
+        // single or multi-root, will save to each `workspaceFolder` 
+        controllers.forEach(controller => {
+            saveBookmarks(controller);
+        });
     }
 
-    //
     function list() {
         
         if (!vscode.window.activeTextEditor) {
@@ -286,13 +344,13 @@ export function activate(context: vscode.ExtensionContext) {
         }
         
         // no active bookmark
-        if (!bookmarks.activeBookmark) {
+        if (!activeController.activeFile) {
             vscode.window.showInformationMessage("No Bookmark found");
             return;  
         }
       
         // no bookmark
-        if (bookmarks.activeBookmark.bookmarks.length === 0) {
+        if (activeController.activeFile.bookmarks.length === 0) {
             vscode.window.showInformationMessage("No Bookmark found");
             return;
         }
@@ -300,24 +358,24 @@ export function activate(context: vscode.ExtensionContext) {
         // push the items
         const items: vscode.QuickPickItem[] = [];
         // tslint:disable-next-line:prefer-for-of
-        for (let index = 0; index < bookmarks.activeBookmark.bookmarks.length; index++) {
+        for (let index = 0; index < activeController.activeFile.bookmarks.length; index++) {
 
-            const bookmarkLine = bookmarks.activeBookmark.bookmarks[index].line + 1;
-            const bookmarkColumn = bookmarks.activeBookmark.bookmarks[index].column + 1;
+            const bookmarkLine = activeController.activeFile.bookmarks[index].line + 1;
+            const bookmarkColumn = activeController.activeFile.bookmarks[index].column + 1;
             const lineText = vscode.window.activeTextEditor.document.lineAt(bookmarkLine - 1).text.trim();
 
-            if (bookmarks.activeBookmark.bookmarks[index].label === "") {
+            if (activeController.activeFile.bookmarks[index].label === "") {
                 items.push({ description: "(Ln " + bookmarkLine.toString() + ", Col " + 
                     bookmarkColumn.toString() + ")", label: lineText });
             } else {
                 items.push({ description: "(Ln " + bookmarkLine.toString() + ", Col " + 
                 bookmarkColumn.toString() + ")", 
-                label: codicons.tag + " " + bookmarks.activeBookmark.bookmarks[index].label });
+                label: codicons.tag + " " + activeController.activeFile.bookmarks[index].label });
             }
         }
 
         // pick one
-        const currentLine: number = vscode.window.activeTextEditor.selection.active.line + 1;
+        const currentPosition: Position = vscode.window.activeTextEditor.selection.active;
         const options = <vscode.QuickPickOptions> {
             placeHolder: "Type a line number or a piece of code to navigate to",
             matchOnDescription: true,
@@ -333,7 +391,7 @@ export function activate(context: vscode.ExtensionContext) {
 
         vscode.window.showQuickPick(items, options).then(selection => {
             if (typeof selection === "undefined") {
-                revealLine(currentLine - 1);
+                revealPosition(currentPosition.line, currentPosition.character);
                 return;
             }
             const itemT = <vscode.QuickPickItem> selection;
@@ -351,39 +409,45 @@ export function activate(context: vscode.ExtensionContext) {
           return;
         }      
       
-        bookmarks.clear();
+        activeController.clear();
         saveWorkspaceState();
         updateDecorations();
     }
 
-    function clearFromAllFiles() {
-        bookmarks.clearAll();
+    async function clearFromAllFiles() {
+        
+        const controller = await pickController(controllers, activeController);
+        if (!controller) {
+            return
+        }
+        
+        controller.clearAll();
+
         saveWorkspaceState();
         updateDecorations();
     }
 
-    function listFromAllFiles() {
+    async function listFromAllFiles() {
+
+        const controller = await pickController(controllers, activeController);
+        if (!controller) {
+            return
+        }
 
         // no bookmark
-        if (!bookmarks.hasAnyBookmark()) {
+        if (!controller.hasAnyBookmark()) {
             vscode.window.showInformationMessage("No Bookmarks found");
             return;
         }
 
         // push the items
-        const items: vscode.QuickPickItem[] = [];
-        const activeTextEditorPath = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri.fsPath : "";
+        const items: BookmarkQuickPickItem[] = [];
+        const activeTextEditor = vscode.window.activeTextEditor;
         const promisses = [];
-        const currentLine: number = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.selection.active.line + 1 : -1;
+        const currentPosition: Position = vscode.window.activeTextEditor?.selection.active;
         
-        let currentWorkspaceFolder: vscode.WorkspaceFolder; 
-        if (activeTextEditorPath) {
-            currentWorkspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(activeTextEditorPath));
-        }            
-        
-        // for (let index = 0; index < bookmarks.bookmarks.length; index++) {
-        for (const bookmark of bookmarks.storage.fileList) {
-            const pp = bookmark.listBookmarks();
+        for (const bookmark of controller.files) {
+            const pp = listBookmarks(bookmark, controller.workspaceFolder);
             promisses.push(pp);
         }
         
@@ -393,20 +457,22 @@ export function activate(context: vscode.ExtensionContext) {
               for (const element of values) {
                   if (element) {
                     for (const elementInside of element) {
-                        if (elementInside.detail.toString().toLowerCase() === activeTextEditorPath.toLowerCase()) {
-                            items.push(
-                                {
-                                    label: elementInside.label,
-                                    description: elementInside.description
-                                }
-                            );
-                        } else {
-                            const itemPath = removeBasePathFrom(elementInside.detail, currentWorkspaceFolder);
+                        if (activeTextEditor &&
+                            elementInside.detail.toString().toLocaleLowerCase() === getRelativePath(controller.workspaceFolder?.uri?.path, activeTextEditor.document.uri.path).toLocaleLowerCase()) {
                             items.push(
                                 {
                                     label: elementInside.label,
                                     description: elementInside.description,
-                                    detail: itemPath
+                                    uri: elementInside.uri
+                                }
+                            );
+                        } else {
+                            items.push(
+                                {
+                                    label: elementInside.label,
+                                    description: elementInside.description,
+                                    detail: elementInside.detail,
+                                    uri: elementInside.uri
                                 }
                             );
                         }
@@ -466,66 +532,34 @@ export function activate(context: vscode.ExtensionContext) {
                   matchOnDescription: true,
                   onDidSelectItem: item => {
 
-                      const itemT = <vscode.QuickPickItem> item;
+                    const itemT = <BookmarkQuickPickItem> item;
 
-                      let filePath: string;
-                      // no detail - previously active document
-                      if (!itemT.detail) {
-                          filePath = activeTextEditorPath;
-                      } else {
-                          // with octicon - document outside project
-                          if (itemT.detail.toString().indexOf(codicons.file_directory + " ") === 0) {
-                              filePath = itemT.detail.toString().split(codicons.file_directory + " ").pop();
-                          } else { // with octicon - documento from other workspaceFolder
-                            if (itemT.detail.toString().indexOf(codicons.file_submodule) === 0) {
-                                filePath = itemT.detail.toString().split(codicons.file_submodule + " ").pop();
-                                for (const wf of vscode.workspace.workspaceFolders) {
-                                    if (wf.name === filePath.split(path.sep).shift()) {
-                                        filePath = path.join(wf.uri.fsPath, filePath.split(path.sep).slice(1).join(path.sep));
-                                        break;
-                                    }
-                                }
-                                
-                            } else { // no octicon - document inside project
-                                if (currentWorkspaceFolder) {
-                                    filePath = currentWorkspaceFolder.uri.fsPath + itemT.detail.toString();
-                                } else {
-                                    if (vscode.workspace.workspaceFolders) {
-                                        filePath = vscode.workspace.workspaceFolders[0].uri.fsPath + itemT.detail.toString();
-                                    } else {
-                                        filePath = itemT.detail.toString();
-                                    }
-                                }
-                            }
-                          }
-                      }
+                    let fileUri: Uri;
+                    if (!itemT.detail) {
+                        fileUri = activeTextEditor.document.uri;
+                    } else {
+                        fileUri = itemT.uri;
+                    }
 
                       const point: Point = parsePosition(itemT.description);
-                      if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.uri.fsPath.toLowerCase() === filePath.toLowerCase()) {
+                      if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.uri.fsPath.toLowerCase() === fileUri.fsPath.toLowerCase()) {
                         if (point) {
                             revealPosition(point.line - 1, point.column - 1);
                         }
                       } else {
-                          const uriDocument: vscode.Uri = vscode.Uri.file(filePath);
-                          vscode.workspace.openTextDocument(uriDocument).then(doc => {
-                              vscode.window.showTextDocument(doc, { preserveFocus: true, preview: true }).then(() => {
-                                if (point) {
-                                    revealPosition(point.line - 1, point.column - 1);
-                                }
-                              });
-                          });
+                        previewPositionInDocument(point, fileUri);
                       }
                   }
               };
               vscode.window.showQuickPick(itemsSorted, options).then(selection => {
                   if (typeof selection === "undefined") {
-                      if (activeTextEditorPath === "")  {
+                      if (!activeTextEditor)  {
+                            vscode.commands.executeCommand("workbench.action.closeActiveEditor");
                           return;
                       } else {
-                        const uriDocument: vscode.Uri = vscode.Uri.file(activeTextEditorPath);
-                        vscode.workspace.openTextDocument(uriDocument).then(doc => {
+                        vscode.workspace.openTextDocument(activeTextEditor.document.uri).then(doc => {
                             vscode.window.showTextDocument(doc).then(() => {
-                                revealLine(currentLine - 1);
+                                revealPosition(currentPosition.line, currentPosition.character);
                                 return;
                             });
                         });                          
@@ -541,40 +575,6 @@ export function activate(context: vscode.ExtensionContext) {
                     if (point) {
                         revealPosition(point.line - 1, point.column - 1);
                     }
-                  } else {
-                      let newPath: string;
-                      // with octicon - document outside project
-                      if (selection.detail.toString().indexOf(codicons.file_directory + " ") === 0) {
-                          newPath = selection.detail.toString().split(codicons.file_directory + " ").pop();
-                      } else {// no octicon - document inside project
-                        if (selection.detail.toString().indexOf(codicons.file_submodule) === 0) {
-                            newPath = selection.detail.toString().split(codicons.file_submodule + " ").pop();
-                            for (const wf of vscode.workspace.workspaceFolders) {
-                                if (wf.name === newPath.split(path.sep).shift()) {
-                                    newPath = path.join(wf.uri.fsPath, newPath.split(path.sep).slice(1).join(path.sep));
-                                    break;
-                                }
-                            }                            
-                        } else { // no octicon - document inside project
-                            if (currentWorkspaceFolder) {
-                                newPath = currentWorkspaceFolder.uri.fsPath + selection.detail.toString();
-                            } else {
-                                if (vscode.workspace.workspaceFolders) {
-                                    newPath = vscode.workspace.workspaceFolders[0].uri.fsPath + selection.detail.toString();
-                                } else {
-                                    newPath = selection.detail.toString();
-                                }
-                            }
-                        }
-                      }
-                      const uriDocument: vscode.Uri = vscode.Uri.file(newPath);
-                      vscode.workspace.openTextDocument(uriDocument).then(doc => {
-                          vscode.window.showTextDocument(doc).then(() => {
-                            if (point) {
-                                revealPosition(point.line - 1, point.column - 1);
-                            }        
-                          });
-                      });
                   }
               });
             }  
@@ -588,12 +588,12 @@ export function activate(context: vscode.ExtensionContext) {
           return;
         }
         
-        if (!bookmarks.activeBookmark) {
+        if (!activeController.activeFile) {
             return;
         }      
         
         // 
-        bookmarks.activeBookmark.nextBookmark(vscode.window.activeTextEditor.selection.active, direction)
+        nextBookmark(activeController.activeFile, vscode.window.activeTextEditor.selection.active, direction)
             .then((next) => {
               if (typeof next === "number") {
 
@@ -601,25 +601,38 @@ export function activate(context: vscode.ExtensionContext) {
                     return;
                 }
 
-                bookmarks.nextDocumentWithBookmarks(bookmarks.activeBookmark, direction)
+                activeController.nextDocumentWithBookmarks(activeController.activeFile, direction)
                   .then((nextDocument) => {
                       
                       if (nextDocument === NO_MORE_BOOKMARKS) {
                         return;
                       }
 
+                      let uriDocument: Uri;
+                      if (typeof nextDocument === "string") {
+                        uriDocument = !activeController.workspaceFolder
+                            ? Uri.file(nextDocument.toString())
+                            : appendPath(activeController.workspaceFolder.uri, nextDocument.toString());
+                      } else {
+                          uriDocument = <Uri>nextDocument;
+                      }
+
                       // same document?
-                      const activeDocument = BookmarksController.normalize(vscode.window.activeTextEditor.document.uri.fsPath);
-                      if (nextDocument.toString() === activeDocument) {
-                        const bookmarkIndex = direction === Directions.Forward ? 0 : bookmarks.activeBookmark.bookmarks.length - 1;
-                        revealPosition(bookmarks.activeBookmark.bookmarks[bookmarkIndex].line, 
-                            bookmarks.activeBookmark.bookmarks[bookmarkIndex].column);
+                    //   const activeDocument = getRelativePath(activeController.workspaceFolder?.uri?.path, vscode.window.activeTextEditor.document.uri.fsPath);
+                    //   if (nextDocument.toString() === activeDocument) {
+                      if (uriDocument.fsPath === vscode.window.activeTextEditor.document.uri.fsPath) {
+                        const bookmarkIndex = direction === Directions.Forward ? 0 : activeController.activeFile.bookmarks.length - 1;
+                        revealPosition(activeController.activeFile.bookmarks[bookmarkIndex].line, 
+                            activeController.activeFile.bookmarks[bookmarkIndex].column);
                         } else { 
-                            vscode.workspace.openTextDocument(nextDocument.toString()).then(doc => {
+                            // const uriDocument = !activeController.workspaceFolder
+                            //     ? Uri.file(nextDocument.toString())
+                            //     : appendPath(activeController.workspaceFolder.uri, nextDocument.toString());
+                            vscode.workspace.openTextDocument(uriDocument).then(doc => {
                                 vscode.window.showTextDocument(doc).then(() => {
-                                    const bookmarkIndex = direction === Directions.Forward ? 0 : bookmarks.activeBookmark.bookmarks.length - 1;
-                                    revealPosition(bookmarks.activeBookmark.bookmarks[bookmarkIndex].line, 
-                                        bookmarks.activeBookmark.bookmarks[bookmarkIndex].column);
+                                    const bookmarkIndex = direction === Directions.Forward ? 0 : activeController.activeFile.bookmarks.length - 1;
+                                    revealPosition(activeController.activeFile.bookmarks[bookmarkIndex].line, 
+                                        activeController.activeFile.bookmarks[bookmarkIndex].column);
                             });
                         });
                       }
@@ -636,14 +649,16 @@ export function activate(context: vscode.ExtensionContext) {
 
     function checkBookmarks(result: number | vscode.Position): boolean {
         if (result === NO_BOOKMARKS_BEFORE || result === NO_BOOKMARKS_AFTER) {
-            vscode.window.showInformationMessage("No more bookmarks");
+            if (vscode.workspace.getConfiguration("bookmarks").get("showNoMoreBookmarksWarning", true)) {
+                vscode.window.showInformationMessage("No more bookmarks");
+            }
             return false;
         }
         return true;
     }
 
     function askForBookmarkLabel(index: number, position: vscode.Position, oldLabel?: string, jumpToPosition?: boolean,
-                                 book?: BookmarkedFile) {
+                                 book?: File) {
         const ibo = <vscode.InputBoxOptions> {
             prompt: "Bookmark Label",
             placeHolder: "Type a label for your bookmark",
@@ -659,9 +674,9 @@ export function activate(context: vscode.ExtensionContext) {
                 return;
             }
             if (index >= 0) {
-                bookmarks.removeBookmark(index, position.line, book);
+                activeController.removeBookmark(index, position.line, book);
             }
-            bookmarks.addBookmark(position, bookmarkLabel, book);
+            activeController.addBookmark(position, bookmarkLabel, book);
             
             // toggle editing mode
             if (jumpToPosition) {
@@ -669,8 +684,8 @@ export function activate(context: vscode.ExtensionContext) {
             }
             // sorted
             /* let itemsSorted = [] =*/
-            const b: BookmarkedFile = book ? book : bookmarks.activeBookmark;
-            b.sortBookmarks();
+            const b: File = book ? book : activeController.activeFile;
+            sortBookmarks(b);
             saveWorkspaceState();
             updateDecorations();
         });
@@ -690,16 +705,18 @@ export function activate(context: vscode.ExtensionContext) {
         const selections = vscode.window.activeTextEditor.selections;
 
         // fix issue emptyAtLaunch
-        if (!bookmarks.activeBookmark) {
-            bookmarks.add(vscode.window.activeTextEditor.document.uri.fsPath);
-            bookmarks.activeBookmark = bookmarks.fromUri(vscode.window.activeTextEditor.document.uri.fsPath);
+        if (!activeController.activeFile) {
+            activeController.addFile(vscode.window.activeTextEditor.document.uri);
+            activeController.activeFile = activeController.fromUri(vscode.window.activeTextEditor.document.uri);
         }
 
-        if (await bookmarks.toggle(selections)) {
-            vscode.window.showTextDocument(vscode.window.activeTextEditor.document, {preview: false, viewColumn: vscode.window.activeTextEditor.viewColumn} );
+        if (await activeController.toggle(selections)) {
+            if (!isInDiffEditor()) {
+                vscode.window.showTextDocument(vscode.window.activeTextEditor.document, {preview: false, viewColumn: vscode.window.activeTextEditor.viewColumn} );
+            }
         }
 
-        bookmarks.activeBookmark.sortBookmarks();
+        sortBookmarks(activeController.activeFile);
         saveWorkspaceState();
         updateDecorations();
     }
@@ -714,17 +731,17 @@ export function activate(context: vscode.ExtensionContext) {
         const selections = vscode.window.activeTextEditor.selections;
 
         // fix issue emptyAtLaunch
-        if (!bookmarks.activeBookmark) {
-            bookmarks.add(vscode.window.activeTextEditor.document.uri.fsPath);
-            bookmarks.activeBookmark = bookmarks.fromUri(vscode.window.activeTextEditor.document.uri.fsPath);
+        if (!activeController.activeFile) {
+            activeController.addFile(vscode.window.activeTextEditor.document.uri);
+            activeController.activeFile = activeController.fromUri(vscode.window.activeTextEditor.document.uri);
         }
 
         let suggestion = suggestLabel(vscode.window.activeTextEditor.selection);
         if (suggestion !== "" && useSelectionWhenAvailable()) {
-            if (await bookmarks.toggle(selections, suggestion)) {
+            if (await activeController.toggle(selections, suggestion)) {
                 vscode.window.showTextDocument(vscode.window.activeTextEditor.document, {preview: false, viewColumn: vscode.window.activeTextEditor.viewColumn} );
             }
-            bookmarks.activeBookmark.sortBookmarks(); 
+            sortBookmarks(activeController.activeFile); 
             saveWorkspaceState();
             updateDecorations();
             return;
@@ -733,8 +750,8 @@ export function activate(context: vscode.ExtensionContext) {
         // ask label
         let oldLabel = "";
         if (suggestion === "" && selections.length === 1) {
-            const index = bookmarks.activeBookmark.indexOfBookmark(selections[0].active.line);
-            oldLabel = index > -1 ? bookmarks.activeBookmark.bookmarks[index].label : "";
+            const index = indexOfBookmark(activeController.activeFile, selections[0].active.line);
+            oldLabel = index > -1 ? activeController.activeFile.bookmarks[index].label : "";
             suggestion = oldLabel;
         }
         // let oldLabel: string = "";
@@ -754,13 +771,13 @@ export function activate(context: vscode.ExtensionContext) {
             return;
         }
 
-        if (await bookmarks.toggle(selections, newLabel)) {
+        if (await activeController.toggle(selections, newLabel)) {
             vscode.window.showTextDocument(vscode.window.activeTextEditor.document, {preview: false, viewColumn: vscode.window.activeTextEditor.viewColumn} );
         }
 
         // sorted
         /* let itemsSorted = [] =*/
-        const b: BookmarkedFile = bookmarks.activeBookmark;
+        const b: File = activeController.activeFile;
         b.bookmarks.sort((n1, n2) => {
             if (n1.line > n2.line) {
                 return 1;
