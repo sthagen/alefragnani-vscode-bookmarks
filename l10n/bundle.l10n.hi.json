@@ -2,6 +2,9 @@
     "Become a Sponsor": "प्रायोजक बनें",
     "Donate via PayPal": "PayPal के माध्यम से दान करें",
     "While Bookmarks is offered for free, if you find it useful, \n        please consider supporting it. Thank you!": "बुकमार्क्स निःशुल्क उपलब्ध है, लेकिन यदि आपको यह उपयोगी लगे, \n        तो कृपया इसका समर्थन करने पर विचार करें। धन्यवाद!",
+    "Open a file first to add bookmarks": "बुकमार्क जोड़ने के लिए पहले कोई फ़ाइल खोलें",
+    "You can't add bookmarks in Search Editor": "आप सर्च एडिटर में बुकमार्क जोड़ नहीं सकते",
+    "There is already a bookmark at this line": "इस पंक्ति पर पहले से ही एक बुकमार्क मौजूद है",
     "Open a file first to list bookmarks": "बुकमार्क सूचीबद्ध करने के लिए पहले कोई फ़ाइल खोलें",
     "Type a line number or a piece of code to navigate to": "जाने के लिए कोई पंक्ति संख्या या कोड का अंश टाइप करें",
     "Open a file first to clear bookmarks": "बुकमार्क हटाने के लिए पहले कोई फ़ाइल खोलें",
@@ -20,5 +23,8 @@
     "No more bookmarks to shrink": "संकुचित करने के लिए और कोई बुकमार्क नहीं है",
     "1 file with bookmarks": "एक फ़ाइल बुकमार्क हैं",
     "files with bookmarks": "फ़ाइलें बुकमार्क हैं",
-    "Error loading Bookmarks: ": "बुकमार्क लोड करने में त्रुटि: "
+    "Error loading Bookmarks: ": "बुकमार्क लोड करने में त्रुटि: ",
+    "Are you sure you want to clear all bookmarks from this file?": "क्या आप वाकई इस फ़ाइल से सभी बुकमार्क साफ़ करना चाहते हैं?",
+    "Are you sure you want to clear all bookmarks from all files?": "क्या आप वाकई सभी फ़ाइलों से सभी बुकमार्क साफ़ करना चाहते हैं?",
+    "Clear": "साफ़ करें"
 }

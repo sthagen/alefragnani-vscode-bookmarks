@@ -53,7 +53,7 @@
                 {
                     "id": "bookmarks",
                     "title": "%bookmarks.activitybar.title%",
-                    "icon": "images/bookmark-activity-bar.svg"
+                    "icon": "$(bookmark)"
                 }
             ]
         },
@@ -137,6 +137,16 @@
                 "command": "bookmarks.toggleLabeled",
                 "title": "%bookmarks.commands.toggleLabeled.title%",
                 "category": "%bookmarks.commands.category.bookmarks%"
+            },
+            {
+                "command": "_bookmarks.addBookmark#sideBar",
+                "title": "%bookmarks.commands.addBookmark#sideBar.title%",
+                "icon": "$(add)"
+            },
+            {
+                "command": "_bookmarks.search#sideBar",
+                "title": "%bookmarks.commands.search#sideBar.title%",
+                "icon": "$(search)"
             },
             {
                 "command": "bookmarks.refresh",
@@ -244,6 +254,14 @@
                     "when": "false"
                 },
                 {
+                    "command": "_bookmarks.addBookmark#sideBar",
+                    "when": "false"
+                },
+                {
+                    "command": "_bookmarks.search#sideBar",
+                    "when": "false"
+                },
+                {
                     "command": "bookmarks.refresh",
                     "when": "false"
                 },
@@ -334,6 +352,16 @@
                 }
             ],
             "view/title": [
+                {
+                    "command": "_bookmarks.addBookmark#sideBar",
+                    "when": "view == bookmarksExplorer",
+                    "group": "navigation@5"
+                },
+                {
+                    "command": "_bookmarks.search#sideBar",
+                    "when": "view == bookmarksExplorer",
+                    "group": "navigation@7"
+                },
                 {
                     "command": "bookmarks.refresh",
                     "when": "view == bookmarksExplorer",
@@ -632,6 +660,23 @@
                     "default": "| $file | $line | $column | $label | $content |",
                     "description": "%bookmarks.configuration.export.pattern.description%",
                     "markdownDescription": "%bookmarks.configuration.export.pattern.markdownDescription%"
+                },
+                "bookmarks.confirmClear": {
+                    "type": "string",
+                    "default": "never",
+                    "description": "%bookmarks.configuration.confirmClear.description%",
+                    "enum": [
+                        "never",
+                        "always",
+                        "commandPalette",
+                        "sideBar"
+                    ],
+                    "enumDescriptions": [
+                        "%bookmarks.configuration.confirmClear.enumDescriptions.never%",
+                        "%bookmarks.configuration.confirmClear.enumDescriptions.always%",
+                        "%bookmarks.configuration.confirmClear.enumDescriptions.commandPalette%",
+                        "%bookmarks.configuration.confirmClear.enumDescriptions.sideBar%"
+                    ]
                 }
             }
         },
