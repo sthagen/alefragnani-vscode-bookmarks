@@ -6,7 +6,7 @@ Die Erweiterung bietet Befehle, um schnell zwischen Lesezeichen vor- und zurück
 
 Das ist aber nicht alles. Sie bietet auch Befehle, um alle Lesezeichen in einer Datei oder im gesamten Arbeitsbereich anzuzeigen und direkt dorthin zu springen. Verwenden Sie den Befehl `Bookmarks: List` bzw. `Bookmarks: List from All Files`, und die Erweiterung zeigt eine Vorschau der markierten Zeile (oder ihres Labels) und ihrer Position an. 
 
-![List](../images/bookmarks-list-from-all-files.gif)
+![List](../docs/images/bookmarks-list-from-all-files.gif)
 
 > Tipp: Wenn Sie einfach in der Liste navigieren, scrollt der Editor vorübergehend zur entsprechenden Stelle, damit Sie besser einschätzen können, ob es das gesuchte Lesezeichen ist.
 

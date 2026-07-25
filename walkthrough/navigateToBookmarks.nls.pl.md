@@ -6,6 +6,6 @@ Rozszerzenie oferuje polecenia umożliwiające szybką nawigację do przodu i do
 
 Ale to nie wszystko. Rozszerzenie umożliwia również wyświetlenie wszystkich zakładek w pliku lub w całym obszarze roboczym i łatwe przejście do nich. Użyj poleceń `Zakładki: Lista` i `Zakładki: Lista ze wszystkich plików`, a rozszerzenie wyświetli podgląd zakładkowanej linii (lub jej etykiety) i jej pozycji.
 
-![Lista](../images/bookmarks-list-from-all-files.gif)
+![Lista](../docs/images/bookmarks-list-from-all-files.gif)
 
 > Wskazówka: Jeśli po prostu nawigujesz po liście, edytor tymczasowo przewinie do jej pozycji, dając ci lepsze zrozumienie, czy ta zakładka jest tym, czego szukałeś.

@@ -23,7 +23,7 @@
 
 ## 标签文本在行中显示
 
-![Bookmarks with labels](../images/bookmarks-with-labels-arrowed.png)
+![Bookmarks with labels](../docs/images/bookmarks-with-labels-arrowed.png)
 
 你可以通过启用 `bookmarks.label.inline.enabled` 来在标记书签所在的同一行中打开书签标签文本的可见性。
 

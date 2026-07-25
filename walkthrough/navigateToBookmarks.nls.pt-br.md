@@ -6,7 +6,7 @@ Essa extensão disponibiliza comandos para nevegar facilmente para os bookmarks 
 
 Mas não está limitado a isso. Também disponibiliza comandos para visualizar todos os bookmarks em um arquivo, ou em toda a área de trabalho. Use os comandos `Bookmarks: Listar` and `Bookmarks: Listar de Todos os Arquivos`, e a extensão apresentará uma prévia da linha com bookmark (ou seu rótulo) e sua posição. 
 
-![Lista](../images/bookmarks-list-from-all-files.gif)
+![Lista](../docs/images/bookmarks-list-from-all-files.gif)
 
 > Dica: Se você simplesmente navegar pela lista, o editor irá rolar temporariamente para a posição do bookmark, dando-lhe um entendimento melhor se o bookmark é aquele que você está procurando.
 

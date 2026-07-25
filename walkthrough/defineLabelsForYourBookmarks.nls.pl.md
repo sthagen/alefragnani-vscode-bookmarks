@@ -22,7 +22,7 @@ Masz do wyboru kilka alternatyw:
 
 ## Tekst etykiety jest wyświetlany w wierszu
 
-![Bookmarks with labels](../images/bookmarks-with-labels-arrowed.png)
+![Bookmarks with labels](../docs/images/bookmarks-with-labels-arrowed.png)
 
 Możesz włączyć widoczność tekstu etykiety zakładki w wierszu, w którym umieszczona jest zakładka z etykietą, włączając `bookmarks.label.inline.enabled`.
 

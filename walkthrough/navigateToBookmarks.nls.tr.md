@@ -6,7 +6,7 @@ Uzantı, `Yer İşaretleri: Sonrakine Geç` ve `Yer İşaretleri: Öncekine Geç
 
 Ancak bununla sınırlı değil. Ayrıca bir dosyadaki tüm Yer İşaretlerini veya çalışma alanının tamamını görmenizi ve ona kolayca gitmenizi sağlayan komutlar da sağlar. Bunun yerine `Yer İşaretleri: Liste` ve `Yer İşaretleri: Tüm Dosyalardan Listele` komutunu kullanın; uzantı, yer işareti eklenen satırın (veya etiketinin) ve konumunun bir önizlemesini görüntüler. 
 
-![Liste](../images/bookmarks-list-from-all-files.gif)
+![Liste](../docs/images/bookmarks-list-from-all-files.gif)
 
 > İpucu: Sadece listede gezinirseniz, düzenleyici geçici olarak o konuma kaydırarak o yer işaretinin aradığınız şey olup olmadığını daha iyi anlamanızı sağlar.
 

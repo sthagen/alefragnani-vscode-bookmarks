@@ -4,4 +4,4 @@
 
 | 单文件夹                                            | 多目录工作区                                                   |
 | --------------------------------------------------- | -------------------------------------------------------------- |
-| ![Side Bar](../images/printscreen-activity-bar.png) | ![Side Bar](../images/printscreen-activity-bar-multi-root.png) |
+| ![Side Bar](../docs/images/printscreen-activity-bar.png) | ![Side Bar](../docs/images/printscreen-activity-bar-multi-root.png) |

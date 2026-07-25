@@ -4,4 +4,4 @@ Eine exklusive Seitenleiste mit allem, was Sie benötigen, um Ihre Produktivitä
 
 | Einzelner Ordner | Multi-root-Arbeitsbereich |
 |------------------|--------------------------|
-| ![Seitenleiste](../images/printscreen-activity-bar.png) | ![Seitenleiste](../images/printscreen-activity-bar-multi-root.png) |
+| ![Seitenleiste](../docs/images/printscreen-activity-bar.png) | ![Seitenleiste](../docs/images/printscreen-activity-bar-multi-root.png) |

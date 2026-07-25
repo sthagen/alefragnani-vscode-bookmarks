@@ -22,7 +22,7 @@
 
 ## बुकमार्क लेबल पाठ इनलाइन प्रदर्शित होता है
 
-![Bookmarks with labels](../images/bookmarks-with-labels-arrowed.png)
+![Bookmarks with labels](../docs/images/bookmarks-with-labels-arrowed.png)
 
 आप `bookmarks.label.inline.enabled` को सक्षम करके बुकमार्क लेबल पाठ की दृश्यता को उसी पंक्ति में इनलाइन चालू कर सकते हैं जहां लेबल वाला बुकमार्क रखा जाता है।
 

@@ -4,4 +4,4 @@ Une barre latérale exclusive avec tout ce dont vous avez besoin pour augmenter 
 
 | Dossier unique | Espace de travail multi-racines |
 |---------------|------------|
-| ![Barre latérale](../images/printscreen-activity-bar.png) | ![Barre latérale](../images/printscreen-activity-bar-multi-root.png) |
+| ![Barre latérale](../docs/images/printscreen-activity-bar.png) | ![Barre latérale](../docs/images/printscreen-activity-bar-multi-root.png) |

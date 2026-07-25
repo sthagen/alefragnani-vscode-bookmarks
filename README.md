@@ -69,13 +69,13 @@ Here are some of the features that **Bookmarks** provides:
 
 You can easily Mark/Unmark bookmarks on any position. You can even define **Labels** for each bookmark.
 
-![Toggle](images/printscreen-toggle.png)
+![Toggle](docs/images/printscreen-toggle.png)
 
 ### Bookmark labels visible inline
 
 You can turn on bookmark labels text visibility inline in the same line where labeled bookmark is placed:
 
-![Bookmarks with labels](images/bookmarks-with-labels-arrowed.png)
+![Bookmarks with labels](docs/images/bookmarks-with-labels-arrowed.png)
 
 This can help you store notes about code without needing to remove these comments later (because bookmarks are not stored in source code and won't be accidentally committed to version control system).
 
@@ -93,7 +93,7 @@ Quicky move between bookmarks backward and forward, even if located outside the 
 
 List all bookmarks from the current file/project and easily navigate to any of them. It shows a line preview and temporarily scroll to its position.
 
-![List](images/bookmarks-list-from-all-files.gif)
+![List](docs/images/bookmarks-list-from-all-files.gif)
 
 * Bookmarks from the active file only shows the line number and its contents
 * Bookmarks from other files in the project also shows the relative path
@@ -104,7 +104,7 @@ The **Bookmarks** extension has its own **Side Bar**, with a variety of commands
 
 | Single Folder | Multi-root Workspace |
 |---------------|------------|
-| ![Side Bar](images/printscreen-activity-bar.png) | ![Side Bar](images/printscreen-activity-bar-multi-root.png) |
+| ![Side Bar](docs/images/printscreen-activity-bar.png) | ![Side Bar](docs/images/printscreen-activity-bar-multi-root.png) |
 
 ## Improved Multi-root support
 
@@ -112,7 +112,7 @@ When you work with **multi-root** workspaces, the extension can manage the bookm
 
 Simply define `saveBookmarksInProject` as `true` on your **User Settings** or in the **Workspace Settings**, and when you run the `Bookmarks: List from All Files` command, you will be able to select from which folder the bookmarks will be shown.
 
-![List](images/bookmarks-list-from-all-files-multi-root.gif)
+![List](docs/images/bookmarks-list-from-all-files-multi-root.gif)
 
 ### Remote Development support
 
@@ -132,7 +132,7 @@ You can use **Bookmarks** to easily select lines or text blocks. Simply toggle b
 
 Select all bookmarked lines. Specially useful while working with log files.
 
-![Select Lines](images/bookmarks-select-lines.gif)
+![Select Lines](docs/images/bookmarks-select-lines.gif)
 
 #### Expand Selection to the Next/Previous Bookmark or Shrink the Selection
 

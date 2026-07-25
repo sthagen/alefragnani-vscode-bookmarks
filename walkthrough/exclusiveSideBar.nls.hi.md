@@ -4,4 +4,4 @@
 
 | एकल फ़ोल्डर | मल्टी-रूट वर्कस्पेस |
 |-------------|---------------------|
-| ![साइड बार](../images/printscreen-activity-bar.png) | ![साइड बार](../images/printscreen-activity-bar-multi-root.png) |
+| ![साइड बार](../docs/images/printscreen-activity-bar.png) | ![साइड बार](../docs/images/printscreen-activity-bar-multi-root.png) |

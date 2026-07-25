@@ -4,4 +4,4 @@
 
 | Tek Klasör                                          | Çok Köklü Çalışma Alanı                                        |
 | --------------------------------------------------- | -------------------------------------------------------------- |
-| ![Kenar Çubuğu](../images/printscreen-activity-bar.png) | ![Kenar Çubuğu](../images/printscreen-activity-bar-multi-root.png) |
+| ![Kenar Çubuğu](../docs/images/printscreen-activity-bar.png) | ![Kenar Çubuğu](../docs/images/printscreen-activity-bar-multi-root.png) |

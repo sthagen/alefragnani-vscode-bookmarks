@@ -22,7 +22,7 @@ Você tem algumas alternativas para escolher:
 
 ## O texto do rótulo é exibido em linha
 
-![Bookmarks with labels](../images/bookmarks-with-labels-arrowed.png)
+![Bookmarks with labels](../docs/images/bookmarks-with-labels-arrowed.png)
 
 Você pode ativar a visibilidade do texto dos rótulos dos bookmarks em linha na mesma linha onde o bookmark etiquetado é colocado, habilitando `bookmarks.label.inline.enabled`.
 

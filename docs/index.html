@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Bookmarks for Visual Studio Code helps you mark important positions, jump between them instantly, select regions, and stay oriented across any codebase.">
+    <title>Bookmarks for VS Code</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="page-shell">
+        <header class="site-header">
+            <a class="brand" href="#top" aria-label="Bookmarks home">
+                <img src="images/icon.png" alt="Bookmarks icon" class="brand-mark">
+                <span class="brand-copy">
+                    <strong>Bookmarks</strong>
+                </span>
+            </a>
+            <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="top-nav" aria-label="Open menu" title="Open menu">
+                <i class="fa-solid fa-bars" aria-hidden="true"></i>
+            </button>
+            <nav id="top-nav" class="top-nav" aria-label="Primary navigation">
+                <a href="#features">Features</a>
+                <a href="#faq">FAQ</a>
+                <a href="#donate"><i class="fa-solid fa-heart" aria-hidden="true"></i> Donate</a>
+            </nav>
+            <div class="header-actions">
+                <a href="https://github.com/alefragnani/vscode-bookmarks" aria-label="GitHub" title="GitHub">
+                    <i class="fa-brands fa-github" aria-hidden="true" style="font-size: 24px;"></i>
+                </a>
+            </div>
+        </header>
+
+        <main id="top">
+            <section class="hero">
+                <div class="hero-copy">
+                    <p class="eyebrow">Visual Studio Code Extension</p>
+                    <h1>Mark it. Jump to it.</h1>
+                    <p class="hero-text">
+                        Bookmarks lets you mark important positions in any file, jump between them instantly,
+                        select entire regions, and stay oriented across complex codebases&mdash;without losing your place.
+                    </p>
+                    <div class="hero-actions">
+                        <a class="button button-primary" href="https://marketplace.visualstudio.com/items?itemName=alefragnani.bookmarks">Get it on Marketplace</a>
+                        <a class="button button-muted" href="https://open-vsx.org/extension/alefragnani/bookmarks">Open VSX</a>
+                    </div>
+                    <ul class="hero-points" aria-label="Bookmarks highlights">
+                        <li>Toggle bookmarks on any line, with or without a label</li>
+                        <li>Jump forward and backward across files in one keystroke</li>
+                        <li>Select lines and regions between bookmarks for rapid editing</li>
+                    </ul>
+                </div>
+                <div class="hero-visual">
+                    <div class="hero-card hero-card-shot">
+                        <img src="images/printscreen-toggle.png" alt="Bookmarks side bar screenshot">
+                    </div>
+                </div>
+            </section>
+
+            <section class="announcement">
+                <p class="eyebrow">What&apos;s new in 14.1</p>
+                <div class="announcement-grid">
+                    <article>
+                        <h2>Export, labels, and improved Side Bar</h2>
+                        <p>Version 14.1 brings a flexible export command, improved labeled bookmark experience, a more capable Side Bar, and new language translations.</p>
+                    </article>
+                    <ul>
+                        <li>Export bookmarks to Markdown</li>
+                        <li>Improved Side Bar</li>
+                        <li>Improved Labeled Bookmark</li>
+                        <li>Persian, French, Hindi and Polish translations</li>
+                        <li>Customizable overview ruler lane</li>
+                        <li>Published to Open VSX</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section class="feature-index" id="features">
+                <div class="section-heading">
+                    <p class="eyebrow">Features</p>
+                    <h2>Jump to the key capabilities.</h2>
+                </div>
+                <div class="feature-grid">
+                    <a class="feature-card" href="#toggle-and-label">
+                        <span class="feature-number">01</span>
+                        <h3>Toggle &amp; Label</h3>
+                        <p>Mark any line instantly, optionally adding a name to describe what matters there.</p>
+                    </a>
+                    <a class="feature-card" href="#navigation">
+                        <span class="feature-number">02</span>
+                        <h3>Navigation</h3>
+                        <p>Jump to the next or previous bookmark, even across files, with a single command.</p>
+                    </a>
+                    <a class="feature-card" href="#side-bar">
+                        <span class="feature-number">03</span>
+                        <h3>Side Bar</h3>
+                        <p>Browse every bookmark in the project, organized by file, from a dedicated panel.</p>
+                    </a>
+                    <a class="feature-card" href="#selection-and-export">
+                        <span class="feature-number">04</span>
+                        <h3>Selection &amp; Export</h3>
+                        <p>Select bookmarked lines or regions between marks, then export everything to Markdown.</p>
+                    </a>
+                </div>
+            </section>
+
+            <section class="spotlight spotlight-reverse" id="toggle-and-label">
+                <div class="spotlight-copy">
+                    <p class="eyebrow">Toggle &amp; Label</p>
+                    <h2>Place a mark or name it&mdash;in one step.</h2>
+                    <p>
+                        Use <strong>Bookmarks: Toggle</strong> to mark or unmark any line instantly.
+                        Use <strong>Bookmarks: Toggle Labeled</strong> to attach a descriptive name that stays
+                        visible inline beside the code, so notes and TODOs live with the work without
+                        polluting source control.
+                    </p>
+                    <div class="detail-list">
+                        <div>
+                            <h3>Inline label visibility</h3>
+                            <p>Enable <code>bookmarks.label.inline.enabled</code> to show label text directly on the bookmarked line. Fine-tune font style, weight, margin, and color to fit your theme.</p>
+                        </div>
+                        <div>
+                            <h3>Smart label suggestions</h3>
+                            <p>Configure <code>bookmarks.label.suggestion</code> to pre-fill the label input from selected text or the entire line, reducing typing when you already have the right words highlighted.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="spotlight-visual stack">
+                    <!-- <figure class="media-card">
+                        <img src="images/printscreen-toggle.png" alt="Bookmarks toggle screenshot">
+                    </figure> -->
+                    <figure class="media-card">
+                        <img src="images/bookmarks-with-labels-arrowed.png" alt="Bookmark inline labels screenshot">
+                    </figure>
+                </div>
+            </section>
+
+            <section class="spotlight" id="navigation">
+                <div class="spotlight-copy">
+                    <p class="eyebrow">Navigation</p>
+                    <h2>Move between what matters without searching.</h2>
+                    <p>
+                        Jump to the next or previous bookmark with <strong>Bookmarks: Jump to Next</strong> and
+                        <strong>Bookmarks: Jump to Previous</strong>. Navigation wraps around and crosses file
+                        boundaries so every marked position in the project is reachable in sequence.
+                    </p>
+                    <div class="command-list">
+                        <article>
+                            <h3>Cross-file navigation</h3>
+                            <ul>
+                                <li>Navigate through all files that contain bookmarks</li>
+                                <li>Wrap around at the first and last bookmark in scope</li>
+                                <li>Use <strong>List from All Files</strong> for a searchable overview with line previews</li>
+                                <li>Temporarily scrolls to a bookmark when selected in the list</li>
+                            </ul>
+                        </article>
+                        <article>
+                            <h3>Navigation controls</h3>
+                            <p>Limit scope to the current file with <code>bookmarks.navigateThroughAllFiles</code>, disable wrap-around with <code>bookmarks.wrapNavigation</code>, and choose whether the revealed line appears at the top or center of the editor.</p>
+                        </article>
+                    </div>
+                </div>
+                <div class="spotlight-visual">
+                    <figure class="media-card wide">
+                        <img src="images/bookmarks-list-from-all-files.gif" alt="List bookmarks from all files animation">
+                    </figure>
+                </div>
+            </section>
+
+            <section class="sidebar-section" id="side-bar">
+                <div class="spotlight-copy">
+                    <p class="eyebrow">Side Bar</p>
+                    <h2>A dedicated panel for every bookmark in the project.</h2>
+                    <p>
+                        The Bookmarks Side Bar organizes all marks by file, supports single-folder and
+                        multi-root workspaces, and gives you a persistent place to browse, jump, and manage
+                        bookmarks without opening the command palette.
+                    </p>
+                </div>
+                <div class="sidebar-grid">
+                    <figure class="media-card">
+                        <img src="images/printscreen-activity-bar.png" alt="Bookmarks side bar in a multi-root workspace">
+                    </figure>
+                </div>
+            </section>
+
+            <section class="settings-section" id="selection-and-export">
+                <div class="section-heading">
+                    <p class="eyebrow">Selection &amp; Export</p>
+                    <h2>Turn bookmarks into selections or shareable documents.</h2>
+                </div>
+                <div class="settings-grid">
+                    <article>
+                        <h3>Select Lines</h3>
+                        <ul>
+                            <li>Select all bookmarked lines in the current file at once</li>
+                            <li>Particularly useful for working with log files</li>
+                            <li>Combine with editor multi-cursor actions for bulk edits</li>
+                            <li>Works with any file type</li>
+                        </ul>
+                    </article>
+                    <article>
+                        <h3>Expand &amp; Shrink Selection</h3>
+                        <ul>
+                            <li>Expand selection to the next or previous bookmark</li>
+                            <li>Shrink selection back toward the nearest mark</li>
+                            <li>Compose region selections from multiple bookmarks</li>
+                            <li>Ideal for analyzing structured blocks in log files or code</li>
+                        </ul>
+                    </article>
+                    <article>
+                        <h3>Export to Markdown</h3>
+                        <ul>
+                            <li>Export all bookmarks to a new Markdown document</li>
+                            <li>Default format: a table grouped by file, sorted by line</li>
+                            <li>Customize with <code>bookmarks.export.pattern</code> using <code>$file</code>, <code>$line</code>, <code>$column</code>, <code>$label</code>, and <code>$content</code></li>
+                            <li>Supports CSV, simple list, or any format you define</li>
+                        </ul>
+                    </article>
+                    <article>
+                        <h3>Persistence &amp; Remote Development</h3>
+                        <ul>
+                            <li>Bookmarks are saved per session and restored on reopen</li>
+                            <li>Save in project with <code>bookmarks.saveBookmarksInProject</code> to share via version control</li>
+                            <li>Full Remote Development support: Docker, SSH, WSL, and Codespaces</li>
+                            <li>Local bookmarks saved in project are available when connected remotely</li>
+                        </ul>
+                    </article>
+                </div>
+            </section>
+
+            <section class="feature-index faq-section" id="faq">
+                <div class="section-heading">
+                    <p class="eyebrow">FAQ</p>
+                    <h2>Quick answers for common questions.</h2>
+                </div>
+                <div class="faq-list">
+                    <details>
+                        <summary>How do I toggle a bookmark?</summary>
+                        <p>Place your cursor on any line and run <strong>Bookmarks: Toggle</strong> from the Command Palette or use the default keybinding. Running the command again on the same line removes the bookmark. You can also use <strong>Bookmarks: Toggle Labeled</strong> to attach a descriptive name at the same time.</p>
+                    </details>
+                    <details>
+                        <summary>Can I add labels to my bookmarks?</summary>
+                        <p>Yes. Use <strong>Bookmarks: Toggle Labeled</strong> to name a bookmark when you create it. You can configure <code>bookmarks.label.inline.enabled</code> to display label text directly on the bookmarked line in the editor, and configure <code>bookmarks.label.suggestion</code> to pre-fill the input from selected text or the current line.</p>
+                    </details>
+                    <details>
+                        <summary>How do bookmarks persist between sessions?</summary>
+                        <p>Bookmarks are automatically saved and restored each time you open the project. By default they are stored in VS Code's workspace state. If you set <code>bookmarks.saveBookmarksInProject</code> to <code>true</code>, bookmarks are saved in a <code>.vscode/bookmarks.json</code> file instead, making them portable across machines and shareable through version control.</p>
+                    </details>
+                    <details>
+                        <summary>Does Bookmarks work in remote development environments?</summary>
+                        <p>Yes. Bookmarks has full support for Remote Development scenarios including Docker containers, SSH targets, WSL, and GitHub Codespaces. When <code>bookmarks.saveBookmarksInProject</code> is enabled, bookmarks saved locally are also available when the same folder is opened remotely.</p>
+                    </details>
+                    <details>
+                        <summary>Can I export my bookmarks?</summary>
+                        <p>Yes. Use <strong>Bookmarks: Export</strong> to generate a new Markdown document with all bookmarks. The default format is a table grouped by file and sorted by line number. You can customize the output with <code>bookmarks.export.pattern</code>, using variables like <code>$file</code>, <code>$line</code>, <code>$label</code>, and <code>$content</code> to produce CSV, plain lists, or any format you need.</p>
+                    </details>
+                    <details>
+                        <summary>Does it work on VS Code forks like Cursor, Windsurf, and Antigravity?</summary>
+                        <p>Yes! It works on all VS Code forks, ensuring compatibility and seamless integration with your favorite tools.</p>
+                    </details>
+                    <details>
+                        <summary>I have a feature request, bug report, or suggestion.</summary>
+                        <p>If you have a feature request, bug report, or suggestion, please submit it through our <a href="https://github.com/alefragnani/vscode-bookmarks/issues" class="text-link">GitHub Issues</a> page. We appreciate your feedback!</p>
+                    </details>
+                    <details>
+                        <summary>I have a question that&apos;s not listed here.</summary>
+                        <p>If you have a question that&apos;s not covered in the FAQ, feel free to reach out through our support channels at <a href="https://github.com/alefragnani/vscode-bookmarks/discussions" class="text-link">GitHub Discussions</a>. We&apos;re here to help!</p>
+                    </details>
+                </div>
+            </section>
+
+            <section class="support-section" id="donate">
+                <div class="section-heading">
+                    <p class="eyebrow">Donate</p>
+                    <h2>Support the extension if you find it useful.</h2>
+                </div>
+                <div class="support-grid">
+                    <article>
+                        <h3>Why support it</h3>
+                        <p>Bookmarks is open source, and your support helps keep maintenance, improvements, and ecosystem compatibility moving forward.</p>
+                        <div class="link-row">
+                            <a class="text-link" href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&amp;business=EP57F3B6FXKTU&amp;lc=US&amp;item_name=Alessandro%20Fragnani&amp;item_number=vscode%20extensions&amp;currency_code=USD&amp;bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted">PayPal</a>
+                            <a class="text-link" href="https://github.com/sponsors/alefragnani">GitHub Sponsors</a>
+                            <a class="text-link" href="https://www.patreon.com/alefragnani">Patreon</a>
+                        </div>
+                    </article>
+                </div>
+            </section>
+        </main>
+
+        
+    </div>
+    <footer class="site-footer">
+        <div class="footer-social">
+            <a href="https://twitter.com/alefragnani" target="_blank" rel="noopener noreferrer" aria-label="Twitter"><i class="fa-brands fa-x-twitter" aria-hidden="true"></i></a>
+            <a href="https://github.com/alefragnani" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><i class="fa-brands fa-github" aria-hidden="true"></i></a>
+            <a href="https://www.linkedin.com/in/alefragnani/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fa-brands fa-linkedin" aria-hidden="true"></i></a>
+          </div>
+          <div class="footer-copy">&copy; 2026 Alessandro Fragnani</div>
+    </footer>
+    <script>
+        (() => {
+            const header = document.querySelector(".site-header");
+            const navToggle = document.querySelector(".nav-toggle");
+            const topNav = document.querySelector("#top-nav");
+
+            if (!(header instanceof HTMLElement) || !(navToggle instanceof HTMLButtonElement) || !(topNav instanceof HTMLElement)) {
+                return;
+            }
+
+            const mobileQuery = window.matchMedia("(max-width: 900px)");
+
+            const setExpanded = (expanded) => {
+                navToggle.setAttribute("aria-expanded", String(expanded));
+                header.classList.toggle("nav-open", expanded);
+                navToggle.setAttribute("aria-label", expanded ? "Close menu" : "Open menu");
+                navToggle.setAttribute("title", expanded ? "Close menu" : "Open menu");
+            };
+
+            const closeMenu = () => setExpanded(false);
+
+            navToggle.addEventListener("click", () => {
+                const expanded = navToggle.getAttribute("aria-expanded") === "true";
+                setExpanded(!expanded);
+            });
+
+            topNav.addEventListener("click", (event) => {
+                const target = event.target;
+                if (target instanceof HTMLElement && target.closest("a")) {
+                    closeMenu();
+                }
+            });
+
+            document.addEventListener("keydown", (event) => {
+                if (event.key === "Escape") {
+                    closeMenu();
+                }
+            });
+
+            document.addEventListener("click", (event) => {
+                if (!mobileQuery.matches || !(event.target instanceof Node)) {
+                    return;
+                }
+
+                if (!header.contains(event.target)) {
+                    closeMenu();
+                }
+            });
+
+            mobileQuery.addEventListener("change", () => {
+                if (!mobileQuery.matches) {
+                    closeMenu();
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

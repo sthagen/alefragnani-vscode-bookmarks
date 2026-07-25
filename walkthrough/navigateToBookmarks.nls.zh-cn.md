@@ -11,6 +11,6 @@
 
 使用这些指令时，本扩展便会显示书签标记行（或是其标签）及其位置的预览。
 
-![List](../images/bookmarks-list-from-all-files.gif)
+![List](../docs/images/bookmarks-list-from-all-files.gif)
 
 > Tip: 你只需在列表中上下切换，编辑器就会自动暂时滚动到书签所在的位置，这样你就能更快的找到你所需要的书签了。

@@ -22,7 +22,7 @@ Je hebt een aantal opties om uit te kiezen:
 
 ## Labeltekst wordt inline weergegeven
 
-![Bladwijzers met labels](../images/bookmarks-with-labels-arrowed.png)
+![Bladwijzers met labels](../docs/images/bookmarks-with-labels-arrowed.png)
 
 Je kunt de zichtbaarheid van bladwijzerlabeltekst inline inschakelen op dezelfde regel waar de gelabelde bladwijzer zich bevindt via `bookmarks.label.inline.enabled`.
 

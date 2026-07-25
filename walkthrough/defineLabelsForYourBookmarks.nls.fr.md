@@ -22,7 +22,7 @@ Vous avez plusieurs alternatives à choisir :
 
 ## Le texte du label s'affiche en ligne
 
-![Bookmarks with labels](../images/bookmarks-with-labels-arrowed.png)
+![Bookmarks with labels](../docs/images/bookmarks-with-labels-arrowed.png)
 
 Vous pouvez activer la visibilité du texte des étiquettes en ligne sur la même ligne où se trouve le signet étiqueté en activant `bookmarks.label.inline.enabled`.
 

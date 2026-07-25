@@ -22,7 +22,7 @@ Tienes un montón de alternativas entre las que elegir:
 
 ## El texto de la etiqueta se muestra en línea
 
-![Bookmarks with labels](../images/bookmarks-with-labels-arrowed.png)
+![Bookmarks with labels](../docs/images/bookmarks-with-labels-arrowed.png)
 
 Puedes activar la visibilidad del texto de las etiquetas en línea en la misma línea donde se coloca el marcador etiquetado habilitando `bookmarks.label.inline.enabled`.
 

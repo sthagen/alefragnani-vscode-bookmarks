@@ -22,7 +22,7 @@ You have a handlfull of alternatives to choose:
 
 ## Label text is displayed inline
 
-![Bookmarks with labels](../images/bookmarks-with-labels-arrowed.png)
+![Bookmarks with labels](../docs/images/bookmarks-with-labels-arrowed.png)
 
 You can turn on bookmark labels text visibility inline in the same line where labeled bookmark is placed by enabling `bookmarks.label.inline.enabled`.
 

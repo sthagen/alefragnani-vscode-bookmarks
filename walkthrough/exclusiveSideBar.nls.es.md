@@ -4,4 +4,4 @@ Una barra lateral exclusiva con todo lo que necesitas para aumentar tu productiv
 
 | Una sola carpeta | Espacio de trabajo con muchas carpetas |
 |---------------|------------|
-| ![Barra lateral](../images/printscreen-activity-bar.png) | ![Barra lateral](../images/printscreen-activity-bar-multi-root.png) |
+| ![Barra lateral](../docs/images/printscreen-activity-bar.png) | ![Barra lateral](../docs/images/printscreen-activity-bar-multi-root.png) |

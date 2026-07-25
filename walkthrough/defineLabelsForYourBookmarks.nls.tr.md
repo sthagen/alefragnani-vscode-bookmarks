@@ -22,7 +22,7 @@ Seçebileceğiniz bir sürü alternatifiniz var:
 
 ## Etiket metni satır içinde görüntüleniyor
 
-![Bookmarks with labels](../images/bookmarks-with-labels-arrowed.png)
+![Bookmarks with labels](../docs/images/bookmarks-with-labels-arrowed.png)
 
 `bookmarks.label.inline.enabled` öğesini etkinleştirerek, etiketli yer işaretinin yerleştirildiği aynı satırda yer işareti etiketleri metninin görünürlüğünü satır içinde açabilirsiniz.
 
